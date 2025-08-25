@@ -41,4 +41,4 @@ CREATE TABLE audit_logs (
 CREATE INDEX idx_transactions_from_user_id ON transactions(from_user_id);
 CREATE INDEX idx_transactions_to_user_id ON transactions(to_user_id);
 CREATE INDEX idx_balances_user_id ON balances(user_id);
-CREATE INDEX idx_audit_logs_entity_id ON
+CREATE INDEX idx_audit_logs_entity_id ON audit_logs(entity_id);
