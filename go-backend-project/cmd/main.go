@@ -10,6 +10,8 @@ import (
     "github.com/rs/zerolog"
     "github.com/rs/zerolog/log"
 	
+    "github.com/AbdullahOztoprak/go-backend-project/internal/repository"
+    "github.com/AbdullahOztoprak/go-backend-project/internal/service"
 	"context"
     "net/http"
     "os/signal"
