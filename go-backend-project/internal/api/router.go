@@ -24,11 +24,21 @@ func NewRouter(userService service.UserService, transactionService service.Trans
 func (r *Router) handleUsers(w http.ResponseWriter, req *http.Request) {
     switch req.Method {
     case http.MethodGet:
-        // Not implemented: List method, placeholder
         http.Error(w, "Not implemented", http.StatusNotImplemented)
         return
     case http.MethodPost:
-        http.Error(w, "Not implemented", http.StatusNotImplemented)
+        var user models.User
+        if err := json.NewDecoder(req.Body).Decode(&user); err != nil {
+            http.Error(w, "Invalid request", http.StatusBadRequest)
+            return
+        }
+        err := r.UserService.Register(&user)
+        if err != nil {
+            http.Error(w, err.Error(), http.StatusBadRequest)
+            return
+        }
+        w.WriteHeader(http.StatusCreated)
+        w.Write([]byte(`{"message":"User created"}`))
         return
     default:
         http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
