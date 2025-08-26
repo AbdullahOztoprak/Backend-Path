@@ -9,15 +9,21 @@ import (
 )
 
 type Router struct {
-    UserService       service.UserService
+    UserService        service.UserService
     TransactionService service.TransactionService
+    BalanceService     service.BalanceService
 }
 
-func NewRouter(userService service.UserService, transactionService service.TransactionService) http.Handler {
-    r := &Router{UserService: userService, TransactionService: transactionService}
+func NewRouter(userService service.UserService, transactionService service.TransactionService, balanceService service.BalanceService) http.Handler {
+    r := &Router{
+        UserService:        userService,
+        TransactionService: transactionService,
+        BalanceService:     balanceService,
+    }
     mux := http.NewServeMux()
     mux.HandleFunc("/api/v1/users", r.handleUsers)
     mux.HandleFunc("/api/v1/transactions", r.handleTransactions)
+    mux.HandleFunc("/api/v1/balances", r.handleBalances)
     return mux
 }
 
@@ -42,6 +48,31 @@ func (r *Router) handleUsers(w http.ResponseWriter, req *http.Request) {
         w.WriteHeader(http.StatusCreated)
         w.Write([]byte(`{"message":"User created"}`))
         return
+    default:
+        http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+    }
+}
+
+func (r *Router) handleBalances(w http.ResponseWriter, req *http.Request) {
+    switch req.Method {
+    case http.MethodGet:
+        userIDParam := req.URL.Query().Get("user_id")
+        if userIDParam == "" {
+            http.Error(w, "Missing user_id", http.StatusBadRequest)
+            return
+        }
+        var userID int64
+        if _, err := fmt.Sscan(userIDParam, &userID); err != nil {
+            http.Error(w, "Invalid user_id", http.StatusBadRequest)
+            return
+        }
+        balance, err := r.BalanceService.GetByUserID(userID)
+        if err != nil {
+            http.Error(w, "Failed to fetch balance", http.StatusInternalServerError)
+            return
+        }
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(balance)
     default:
         http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
     }
