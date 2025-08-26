@@ -24,7 +24,9 @@ func NewRouter(userService service.UserService, transactionService service.Trans
 func (r *Router) handleUsers(w http.ResponseWriter, req *http.Request) {
     switch req.Method {
     case http.MethodGet:
-        http.Error(w, "Not implemented", http.StatusNotImplemented)
+        users := []*models.User{} // Boş slice, ileride veritabanından çekilecek
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(users)
         return
     case http.MethodPost:
         var user models.User
