@@ -4,6 +4,7 @@ import (
     "os"
 
     "github.com/AbdullahOztoprak/go-backend-project/internal/db"
+    "github.com/AbdullahOztoprak/go-backend-project/internal/api"
 
     "github.com/joho/godotenv"
     "github.com/rs/zerolog"
@@ -34,9 +35,10 @@ func main() {
     port := os.Getenv("PORT")
     log.Info().Msgf("Server will start at port: %s", port)
 
+    router := api.NewRouter()
     srv := &http.Server{
         Addr:    ":" + port,
-        Handler: http.DefaultServeMux, // Replace with your router later
+        Handler: router,
     }
 
     // Run server in a goroutine
