@@ -35,7 +35,15 @@ func main() {
     port := os.Getenv("PORT")
     log.Info().Msgf("Server will start at port: %s", port)
 
-    router := api.NewRouter(userService)
+    // Initialize repositories
+    userRepo := repository.NewPGUserRepository(conn)
+    txRepo := repository.NewPGTransactionRepository(conn)
+
+    // Initialize services
+    userService := service.NewUserService(userRepo)
+    transactionService := txRepo // PGTransactionRepository implements TransactionService
+
+    router := api.NewRouter(userService, transactionService)
     srv := &http.Server{
         Addr:    ":" + port,
         Handler: router,
