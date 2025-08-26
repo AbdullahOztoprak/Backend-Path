@@ -3,7 +3,9 @@ package api
 import (
     "net/http"
     "encoding/json"
+    "fmt"
     "github.com/AbdullahOztoprak/go-backend-project/internal/service"
+    "github.com/AbdullahOztoprak/go-backend-project/internal/models"
 )
 
 type Router struct {
