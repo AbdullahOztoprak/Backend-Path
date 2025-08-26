@@ -45,7 +45,7 @@ func main() {
     userService := service.NewUserService(userRepo)
     transactionService := txRepo // PGTransactionRepository implements TransactionService
 
-    router := api.NewRouter(userService, transactionService)
+    router := api.NewRouter(userService, transactionService, balanceService)
     srv := &http.Server{
         Addr:    ":" + port,
         Handler: router,
