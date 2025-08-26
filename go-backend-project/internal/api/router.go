@@ -3,23 +3,41 @@ package api
 import (
     "net/http"
     "encoding/json"
+    "github.com/AbdullahOztoprak/go-backend-project/internal/service"
 )
 
-func NewRouter() http.Handler {
+type Router struct {
+    UserService service.UserService
+}
+
+func NewRouter(userService service.UserService) http.Handler {
+    r := &Router{UserService: userService}
     mux := http.NewServeMux()
-    mux.HandleFunc("/api/v1/users", handleUsers)
+    mux.HandleFunc("/api/v1/users", r.handleUsers)
     return mux
 }
 
-func handleUsers(w http.ResponseWriter, r *http.Request) {
-    switch r.Method {
+func (r *Router) handleUsers(w http.ResponseWriter, req *http.Request) {
+    switch req.Method {
     case http.MethodGet:
-        // Example: return empty user list
-        users := []interface{}{}
+        users, err := r.UserService.List()
+        if err != nil {
+            http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
+            return
+        }
         w.Header().Set("Content-Type", "application/json")
         json.NewEncoder(w).Encode(users)
     case http.MethodPost:
-        // Example: create user (dummy response)
+        var user service.UserCreateRequest // veya models.User
+        if err := json.NewDecoder(req.Body).Decode(&user); err != nil {
+            http.Error(w, "Invalid request", http.StatusBadRequest)
+            return
+        }
+        err := r.UserService.Register(&user)
+        if err != nil {
+            http.Error(w, err.Error(), http.StatusBadRequest)
+            return
+        }
         w.WriteHeader(http.StatusCreated)
         w.Write([]byte(`{"message":"User created"}`))
     default:

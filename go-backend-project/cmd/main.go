@@ -35,7 +35,7 @@ func main() {
     port := os.Getenv("PORT")
     log.Info().Msgf("Server will start at port: %s", port)
 
-    router := api.NewRouter()
+    router := api.NewRouter(userService)
     srv := &http.Server{
         Addr:    ":" + port,
         Handler: router,
