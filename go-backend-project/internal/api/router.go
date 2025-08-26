@@ -3,11 +3,17 @@ package api
 import (
     "net/http"
     "encoding/json"
+    "github.com/AbdullahOztoprak/go-backend-project/internal/service"
 )
 
-func NewRouter() http.Handler {
+type Router struct {
+    UserService service.UserService
+}
+
+func NewRouter(userService service.UserService) http.Handler {
+    r := &Router{UserService: userService}
     mux := http.NewServeMux()
-    mux.HandleFunc("/api/v1/users", handleUsers)
+    mux.HandleFunc("/api/v1/users", r.handleUsers)
     return mux
 }
 
