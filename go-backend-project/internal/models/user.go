@@ -28,6 +28,12 @@ func (u *User) Validate() error {
     if u.Role == "" {
         return errors.New("role is required")
     }
+    if len(u.PasswordHash) < 8 {
+        return errors.New("password must be at least 8 characters")
+    }
+    if strings.TrimSpace(u.PasswordHash) == "" {
+        return errors.New("password is required")
+    }
     // Optional: Email regex check
     emailRegex := regexp.MustCompile(`^[^@]+@[^@]+\.[^@]+$`)
     if !emailRegex.MatchString(u.Email) {
