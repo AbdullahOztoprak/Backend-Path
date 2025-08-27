@@ -44,3 +44,23 @@ func (r *PGUserRepository) Delete(id int64) error {
         "DELETE FROM users WHERE id=$1", id)
     return err
 }
+
+func (r *PGUserRepository) List() ([]*models.User, error) {
+    rows, err := r.Conn.Query(context.Background(),
+        "SELECT id, username, email, password_hash, role, created_at, updated_at FROM users")
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var users []*models.User
+    for rows.Next() {
+        var user models.User
+        err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+        if err != nil {
+            return nil, err
+        }
+        users = append(users, &user)
+    }
+    return users, nil
+}

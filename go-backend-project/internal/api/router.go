@@ -30,7 +30,11 @@ func NewRouter(userService service.UserService, transactionService service.Trans
 func (r *Router) handleUsers(w http.ResponseWriter, req *http.Request) {
     switch req.Method {
     case http.MethodGet:
-        users := []*models.User{} // Boş slice, ileride veritabanından çekilecek
+        users, err := r.UserService.List()
+        if err != nil {
+            http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
+            return
+        }
         w.Header().Set("Content-Type", "application/json")
         json.NewEncoder(w).Encode(users)
         return
