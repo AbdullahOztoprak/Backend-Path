@@ -1,0 +1,24 @@
+# Docker related files
+Dockerfile
+docker-compose.yml
+
+# Environment files
+.env
+
+# Logs
+*.log
+
+# Go vendor directory
+vendor/
+
+# Build artifacts
+/main
+/go-backend-project
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
