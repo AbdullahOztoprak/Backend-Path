@@ -1,3 +1,33 @@
+# Quick Start
+
+1. Install Go and Docker Desktop.
+2. Clone the repo:
+	```
+	git clone <your-repo-url>
+	cd go-backend-project
+	```
+3. Start Docker Desktop.
+4. Run PostgreSQL:
+	```
+	docker run --name postgres-db -e POSTGRES_PASSWORD=abdullah -p 5432:5432 -d postgres:17
+	```
+5. Create the database and tables:
+	```
+	docker exec -it postgres-db psql -U postgres
+	CREATE DATABASE go_backend_db;
+	\q
+	docker cp internal/db/schema.sql postgres-db:/schema.sql
+	docker exec -it postgres-db psql -U postgres -d go_backend_db -f /schema.sql
+	```
+6. Copy `.env.example` to `.env` and fill in:
+	```
+	PORT=8081
+	DATABASE_URL=postgres://postgres:abdullah@localhost:5432/go_backend_db?sslmode=disable
+	```
+7. Run the server:
+	```
+	go run ./cmd/main.go
+	```
 # Go Backend Project
 
 A simple backend API built with Go for managing users, transactions, and balances.
