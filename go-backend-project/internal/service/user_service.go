@@ -8,4 +8,5 @@ type UserService interface {
     GetByID(id int64) (*models.User, error)
     Update(user *models.User) error
     Delete(id int64) error
+    List() ([]*models.User, error)
 }

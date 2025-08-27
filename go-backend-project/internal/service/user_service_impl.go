@@ -40,3 +40,7 @@ func (s *UserServiceImpl) Update(user *models.User) error {
 func (s *UserServiceImpl) Delete(id int64) error {
     return s.Repo.Delete(id)
 }
+
+func (s *UserServiceImpl) List() ([]*models.User, error) {
+    return s.Repo.List()
+}

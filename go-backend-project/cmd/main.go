@@ -40,10 +40,12 @@ func main() {
     // Initialize repositories
     userRepo := repository.NewPGUserRepository(conn)
     txRepo := repository.NewPGTransactionRepository(conn)
+    balanceRepo := repository.NewPGBalanceRepository(conn)
 
     // Initialize services
     userService := service.NewUserService(userRepo)
     transactionService := txRepo // PGTransactionRepository implements TransactionService
+    balanceService := balanceRepo // PGBalanceRepository implements BalanceService
 
     router := api.NewRouter(userService, transactionService, balanceService)
     srv := &http.Server{
