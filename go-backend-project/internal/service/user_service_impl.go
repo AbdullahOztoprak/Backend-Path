@@ -27,9 +27,27 @@ func (s *UserServiceImpl) Register(user *models.User) error {
 }
 
 func (s *UserServiceImpl) Authenticate(username, password string) (*models.User, error) {
-    // In a real implementation, you would hash the password and check against stored hash
-    // For now, this is a placeholder
-    return nil, nil
+    // Find user by username (or email)
+    users, err := s.Repo.List()
+    if err != nil {
+        return nil, err
+    }
+    var found *models.User
+    for _, u := range users {
+        if u.Username == username || u.Email == username {
+            found = u
+            break
+        }
+    }
+    if found == nil {
+        return nil, nil
+    }
+    // Compare password
+    err = bcrypt.CompareHashAndPassword([]byte(found.PasswordHash), []byte(password))
+    if err != nil {
+        return nil, nil
+    }
+    return found, nil
 }
 
 func (s *UserServiceImpl) GetByID(id int64) (*models.User, error) {
