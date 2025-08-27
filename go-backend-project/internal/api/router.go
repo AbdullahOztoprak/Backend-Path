@@ -50,7 +50,14 @@ func (r *Router) handleUsers(w http.ResponseWriter, req *http.Request) {
             return
         }
         w.WriteHeader(http.StatusCreated)
-        w.Write([]byte(`{"message":"User created"}`))
+        resp := map[string]interface{}{
+            "message": "User created",
+            "username": user.Username,
+            "email": user.Email,
+            "role": user.Role,
+        }
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(resp)
         return
     default:
         http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
