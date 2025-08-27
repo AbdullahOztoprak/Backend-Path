@@ -3,6 +3,7 @@ package service
 import (
     "github.com/AbdullahOztoprak/go-backend-project/internal/models"
     "github.com/AbdullahOztoprak/go-backend-project/internal/repository"
+    "golang.org/x/crypto/bcrypt"
 )
 
 type UserServiceImpl struct {
@@ -17,6 +18,11 @@ func (s *UserServiceImpl) Register(user *models.User) error {
     if err := user.Validate(); err != nil {
         return err
     }
+    hashed, err := bcrypt.GenerateFromPassword([]byte(user.PasswordHash), bcrypt.DefaultCost)
+    if err != nil {
+        return err
+    }
+    user.PasswordHash = string(hashed)
     return s.Repo.Create(user)
 }
 
