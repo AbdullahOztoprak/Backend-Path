@@ -4,16 +4,17 @@ import (
     "errors"
     "regexp"
     "strings"
+    "time"
 )
 
 type User struct {
-    ID           int64  `json:"id"`
-    Username     string `json:"username"`
-    Email        string `json:"email"`
-    PasswordHash string `json:"password_hash"`
-    Role         string `json:"role"`
-    CreatedAt    string `json:"created_at"`
-    UpdatedAt    string `json:"updated_at"`
+    ID           int64     `json:"id"`
+    Username     string    `json:"username"`
+    Email        string    `json:"email"`
+    PasswordHash string    `json:"password_hash"`
+    Role         string    `json:"role"`
+    CreatedAt    time.Time `json:"created_at"`
+    UpdatedAt    time.Time `json:"updated_at"`
 }
 
 // Validate checks if the user fields are valid
