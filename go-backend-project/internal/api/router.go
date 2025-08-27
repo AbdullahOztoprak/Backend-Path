@@ -1,3 +1,4 @@
+
 package api
 
 import (
@@ -7,6 +8,14 @@ import (
     "github.com/AbdullahOztoprak/go-backend-project/internal/service"
     "github.com/AbdullahOztoprak/go-backend-project/internal/models"
 )
+
+// Simple logging middleware
+func loggingMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        fmt.Printf("[%s] %s %s\n", r.Method, r.URL.Path, r.RemoteAddr)
+        next.ServeHTTP(w, r)
+    })
+}
 
 type Router struct {
     UserService        service.UserService
@@ -25,7 +34,7 @@ func NewRouter(userService service.UserService, transactionService service.Trans
     mux.HandleFunc("/api/v1/transactions", r.handleTransactions)
     mux.HandleFunc("/api/v1/login", r.handleLogin)
     mux.HandleFunc("/api/v1/balances", r.handleBalances)
-    return mux
+    return loggingMiddleware(mux)
 }
 
 // User login handler
