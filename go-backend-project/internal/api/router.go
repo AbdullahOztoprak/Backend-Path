@@ -23,8 +23,38 @@ func NewRouter(userService service.UserService, transactionService service.Trans
     mux := http.NewServeMux()
     mux.HandleFunc("/api/v1/users", r.handleUsers)
     mux.HandleFunc("/api/v1/transactions", r.handleTransactions)
+    mux.HandleFunc("/api/v1/login", r.handleLogin)
     mux.HandleFunc("/api/v1/balances", r.handleBalances)
     return mux
+}
+
+// User login handler
+func (r *Router) handleLogin(w http.ResponseWriter, req *http.Request) {
+    if req.Method != http.MethodPost {
+        http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+        return
+    }
+    var creds struct {
+        Username string `json:"username"`
+        Password string `json:"password"`
+    }
+    if err := json.NewDecoder(req.Body).Decode(&creds); err != nil {
+        http.Error(w, "Invalid request", http.StatusBadRequest)
+        return
+    }
+    user, err := r.UserService.Authenticate(creds.Username, creds.Password)
+    if err != nil || user == nil {
+        http.Error(w, "Invalid username or password", http.StatusUnauthorized)
+        return
+    }
+    resp := map[string]interface{}{
+        "message": "Login successful",
+        "username": user.Username,
+        "email": user.Email,
+        "role": user.Role,
+    }
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(resp)
 }
 
 func (r *Router) handleUsers(w http.ResponseWriter, req *http.Request) {
