@@ -1,3 +1,9 @@
+// Helper for consistent error responses
+func writeError(w http.ResponseWriter, status int, message string) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    json.NewEncoder(w).Encode(map[string]string{"error": message})
+}
 
 package api
 
@@ -40,7 +46,7 @@ func NewRouter(userService service.UserService, transactionService service.Trans
 // User login handler
 func (r *Router) handleLogin(w http.ResponseWriter, req *http.Request) {
     if req.Method != http.MethodPost {
-        http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+        writeError(w, http.StatusMethodNotAllowed, "Method Not Allowed")
         return
     }
     var creds struct {
@@ -48,12 +54,12 @@ func (r *Router) handleLogin(w http.ResponseWriter, req *http.Request) {
         Password string `json:"password"`
     }
     if err := json.NewDecoder(req.Body).Decode(&creds); err != nil {
-        http.Error(w, "Invalid request", http.StatusBadRequest)
+        writeError(w, http.StatusBadRequest, "Invalid request body")
         return
     }
     user, err := r.UserService.Authenticate(creds.Username, creds.Password)
     if err != nil || user == nil {
-        http.Error(w, "Invalid username or password", http.StatusUnauthorized)
+        writeError(w, http.StatusUnauthorized, "Invalid username or password")
         return
     }
     resp := map[string]interface{}{
@@ -80,12 +86,12 @@ func (r *Router) handleUsers(w http.ResponseWriter, req *http.Request) {
     case http.MethodPost:
         var user models.User
         if err := json.NewDecoder(req.Body).Decode(&user); err != nil {
-            http.Error(w, "Invalid request", http.StatusBadRequest)
+            writeError(w, http.StatusBadRequest, "Invalid request body")
             return
         }
         err := r.UserService.Register(&user)
         if err != nil {
-            http.Error(w, err.Error(), http.StatusBadRequest)
+            writeError(w, http.StatusBadRequest, err.Error())
             return
         }
         w.WriteHeader(http.StatusCreated)
