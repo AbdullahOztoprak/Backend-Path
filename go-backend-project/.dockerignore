@@ -3,7 +3,7 @@ Dockerfile
 docker-compose.yml
 
 # Environment files
-.env
+# .env (commented out to allow copying to container)
 
 # Logs
 *.log
