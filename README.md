@@ -2,16 +2,16 @@
 
 Modern, secure and scalable backend API built with Go, featuring user management, transactions, and secure authentication.
 
-## 📸 API Testleri (Postman)
+## 📸 API Tests (Postman)
 
-### Kullanıcı Oluşturma
-![Kullanıcı Oluşturma](docs/screenshots/register.png)
+### User Registration
+![User Registration](go-backend-project/docs/screenshots/register.png)
 
-### Kullanıcı Girişi
-![Kullanıcı Girişi](docs/screenshots/login.png)
+### User Login
+![User Login](go-backend-project/docs/screenshots/login.png)
 
-### Para Gönderme
-![Para Gönderme](docs/screenshots/transaction.png)
+### Money Transfer
+![Money Transfer](go-backend-project/docs/screenshots/transaction.png)
 
 ## 🎯 Project Overview
 
