@@ -1,12 +1,12 @@
 module github.com/AbdullahOztoprak/go-backend-project
 
-go 1.21
+go 1.23
 
 require (
-	github.com/jackc/pgx/v5 v5.7.5
+	github.com/jackc/pgx/v5 v5.4.3
 	github.com/joho/godotenv v1.5.1
-	github.com/rs/zerolog v1.34.0
-	golang.org/x/crypto v0.41.0
+	github.com/rs/zerolog v1.31.0
+	golang.org/x/crypto v0.14.0
 )
 
 require (
