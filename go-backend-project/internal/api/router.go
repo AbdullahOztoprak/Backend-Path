@@ -1,10 +1,3 @@
-// Helper for consistent error responses
-func writeError(w http.ResponseWriter, status int, message string) {
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(status)
-    json.NewEncoder(w).Encode(map[string]string{"error": message})
-}
-
 package api
 
 import (
@@ -14,6 +7,13 @@ import (
     "github.com/AbdullahOztoprak/go-backend-project/internal/service"
     "github.com/AbdullahOztoprak/go-backend-project/internal/models"
 )
+
+// Helper for consistent error responses
+func writeError(w http.ResponseWriter, status int, message string) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    json.NewEncoder(w).Encode(map[string]string{"error": message})
+}
 
 // Simple logging middleware
 func loggingMiddleware(next http.Handler) http.Handler {
@@ -36,6 +36,30 @@ func NewRouter(userService service.UserService, transactionService service.Trans
         BalanceService:     balanceService,
     }
     mux := http.NewServeMux()
+    
+    // Root path handler
+    mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+        if req.URL.Path == "/" {
+            w.Header().Set("Content-Type", "application/json")
+            w.WriteHeader(http.StatusOK)
+            json.NewEncoder(w).Encode(map[string]interface{}{
+                "message": "Go Backend API",
+                "version": "1.0.0",
+                "status": "running",
+                "endpoints": []string{
+                    "POST /api/v1/login",
+                    "GET /api/v1/users",
+                    "POST /api/v1/users", 
+                    "GET /api/v1/transactions",
+                    "POST /api/v1/transactions",
+                    "GET /api/v1/balances",
+                },
+            })
+        } else {
+            writeError(w, http.StatusNotFound, "Endpoint not found")
+        }
+    })
+    
     mux.HandleFunc("/api/v1/users", r.handleUsers)
     mux.HandleFunc("/api/v1/transactions", r.handleTransactions)
     mux.HandleFunc("/api/v1/login", r.handleLogin)
