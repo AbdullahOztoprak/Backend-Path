@@ -15,7 +15,7 @@ This is a professional Go backend project that provides:
 
 ## 🚀 Technologies Used
 
-- **Go 1.21+** - Modern programming language
+- **Go 1.23+** - Modern programming language
 - **PostgreSQL** - Reliable database
 - **Docker & Docker Compose** - Containerization
 - **bcrypt** - Secure password hashing
@@ -35,11 +35,13 @@ This is a professional Go backend project that provides:
 ## 🛠️ Quick Start
 
 ### Prerequisites
-- **Go 1.21+** installed
+- **Go 1.23+** installed
 - **Docker Desktop** running
 - **Git** for cloning
 
 ### Option 1: Docker Compose (Recommended)
+
+**For Linux/Mac:**
 ```bash
 # Clone the repository
 git clone https://github.com/AbdullahOztoprak/Backend-Path.git
@@ -54,7 +56,24 @@ docker-compose up --build
 # Server will be available at http://localhost:8081
 ```
 
+**For Windows (PowerShell):**
+```powershell
+# Clone the repository
+git clone https://github.com/AbdullahOztoprak/Backend-Path.git
+cd Backend-Path/go-backend-project
+
+# Copy environment file
+Copy-Item .env.example .env
+
+# Start everything with Docker
+docker-compose up --build
+
+# Server will be available at http://localhost:8081
+```
+
 ### Option 2: Manual Setup
+
+**For Linux/Mac:**
 ```bash
 # Clone the repository
 git clone https://github.com/AbdullahOztoprak/Backend-Path.git
@@ -70,6 +89,28 @@ docker exec -it postgres-db psql -U postgres -d go_backend_db -f /schema.sql
 
 # Copy and configure environment
 cp .env.example .env
+
+# Install dependencies and run
+go mod tidy
+go run cmd/main.go
+```
+
+**For Windows (PowerShell):**
+```powershell
+# Clone the repository
+git clone https://github.com/AbdullahOztoprak/Backend-Path.git
+cd Backend-Path/go-backend-project
+
+# Start PostgreSQL database
+docker run --name postgres-db -e POSTGRES_PASSWORD=abdullah -p 5432:5432 -d postgres:15
+
+# Create database and load schema
+docker exec -it postgres-db psql -U postgres -c "CREATE DATABASE go_backend_db;"
+docker cp internal/db/schema.sql postgres-db:/schema.sql
+docker exec -it postgres-db psql -U postgres -d go_backend_db -f /schema.sql
+
+# Copy and configure environment
+Copy-Item .env.example .env
 
 # Install dependencies and run
 go mod tidy
@@ -154,7 +195,20 @@ go-backend-project/
 
 ## 🧪 Running Tests
 
+**For Linux/Mac:**
 ```bash
+# Run all tests
+go test ./internal/service/...
+
+# Run tests with coverage
+go test -cover ./internal/service/...
+
+# Run specific test
+go test -run TestRegisterValidation ./internal/service/...
+```
+
+**For Windows (PowerShell):**
+```powershell
 # Run all tests
 go test ./internal/service/...
 
@@ -202,6 +256,33 @@ DB_PASSWORD=your_secure_password
 DB_NAME=go_backend_db
 JWT_SECRET=your_jwt_secret_for_production
 ```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**Windows Users:**
+- Use `Copy-Item .env.example .env` instead of `cp .env.example .env`
+- Make sure Docker Desktop is running and set to Linux containers
+- If you get "bind: Only one usage of each socket address" error, stop other services using port 8081
+
+**Port Issues:**
+```powershell
+# Check what's using port 8081
+netstat -ano | findstr :8081
+
+# Kill process using the port (replace PID with actual process ID)
+taskkill /PID <PID> /F
+```
+
+**Docker Issues:**
+- Make sure Docker Desktop is running
+- Try `docker-compose down` then `docker-compose up --build`
+- Clear Docker cache: `docker system prune -a`
+
+**Database Connection Issues:**
+- Ensure PostgreSQL container is running: `docker ps`
+- Check database logs: `docker logs go_backend_postgres`
 
 ## 🤝 Contributing
 
