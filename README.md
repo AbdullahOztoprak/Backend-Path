@@ -77,10 +77,13 @@ cd Backend-Path/go-backend-project
 Copy-Item .env.example .env
 
 # Start everything with Docker
+
+> **Note:** Before running the Docker Compose command, make sure Docker Desktop is running and set to Linux containers. Otherwise, you may encounter errors like `unable to get image 'postgres:15-alpine'`.
+
 docker-compose up --build
 
 # Server will be available at http://localhost:8081
-```
+
 
 ### Option 2: Manual Setup
 
@@ -167,6 +170,48 @@ go run cmd/main.go
 ### Get Balances
 **GET** `/api/v1/balances`
 
+## 🧪 Testing the API
+
+### Using PowerShell (Windows)
+```powershell
+# Test if server is running
+Invoke-RestMethod -Uri "http://localhost:8081/api/v1/users" -Method GET
+
+# Create a new user
+$body = @{
+    username = "test_user"
+    email = "test@example.com"
+    password_hash = "password123"
+    role = "user"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8081/api/v1/users" -Method POST -Body $body -ContentType "application/json"
+
+# Login (if login endpoint exists)
+$loginBody = @{
+    username = "test_user"
+    password = "password123"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8081/api/v1/login" -Method POST -Body $loginBody -ContentType "application/json"
+```
+
+### Using curl (Linux/Mac)
+```bash
+# Test if server is running
+curl http://localhost:8081/api/v1/users
+
+# Create a new user
+curl -X POST http://localhost:8081/api/v1/users \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test_user","email":"test@example.com","password_hash":"password123","role":"user"}'
+
+# Login
+curl -X POST http://localhost:8081/api/v1/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test_user","password":"password123"}'
+```
+
 ## 🏗️ Project Structure
 
 ```
@@ -203,6 +248,16 @@ go-backend-project/
 ├── .env.example         # Environment configuration template
 └── README.md           # Project documentation
 ```
+
+### Docker Configuration Features
+
+Our `docker-compose.yml` includes production-ready features:
+
+- **Health Checks**: PostgreSQL container includes health monitoring to ensure database is ready
+- **Dependency Management**: Go application waits for PostgreSQL to be healthy before starting
+- **Automatic Restart**: Application automatically restarts on failure, preventing startup timing issues
+- **Network Isolation**: Services communicate through dedicated Docker network
+- **Volume Persistence**: Database data persists between container restarts
 
 ## 🧪 Running Tests
 
@@ -294,6 +349,8 @@ taskkill /PID <PID> /F
 **Database Connection Issues:**
 - Ensure PostgreSQL container is running: `docker ps`
 - Check database logs: `docker logs go_backend_postgres`
+- If you see "the database system is starting up" errors, the application will automatically retry thanks to healthcheck and restart policies in docker-compose.yml
+- For immediate restart of just the app: `docker-compose restart go_backend_app`
 
 ## 🤝 Contributing
 
