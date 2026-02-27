@@ -1,0 +1,52 @@
+database:
+  host: "localhost"
+  port: 5432
+  user: "prod_user"
+  password: "secure_password"
+  name: "go_backend_db"
+  sslmode: "require"
+
+server:
+  port: 8081
+  read_timeout: 15s
+  write_timeout: 15s
+  idle_timeout: 60s
+
+jwt:
+  secret: "your_jwt_secret_for_production"
+  expiration: 24h
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: "redis_password"
+
+observability:
+  log_level: "info"
+  metrics_enabled: true
+  tracing_enabled: true
+
+rate_limiting:
+  enabled: true
+  requests_per_minute: 100
+
+cors:
+  allowed_origins:
+    - "https://your-frontend-domain.com"
+  allowed_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+  allowed_headers:
+    - "Content-Type"
+    - "Authorization"
+
+idempotency:
+  enabled: true
+  expiration: 24h
+
+health_check:
+  enabled: true
+  interval: 30s
+  timeout: 5s

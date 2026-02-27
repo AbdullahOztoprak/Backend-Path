@@ -1,0 +1,18 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'go_backend_api'
+    static_configs:
+      - targets: ['localhost:8080']  # Change this to your application's address
+    metrics_path: '/metrics'  # Ensure your application exposes metrics at this path
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'localhost:9093'  # Change this to your Alertmanager address
+
+rule_files:
+  - 'alerting/rules.yml'  # Path to your alerting rules file
