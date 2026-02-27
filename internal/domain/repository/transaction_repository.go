@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"go-backend-project/internal/domain/entity"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
 )
 
 // TransactionRepository defines the interface for transaction data operations.

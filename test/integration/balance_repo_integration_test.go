@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go-backend-project/internal/infrastructure/persistence/postgres"
-	"go-backend-project/internal/domain/repository"
-	"go-backend-project/test/integration/testcontainers_setup"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/persistence/postgres"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/repository"
+	"github.com/AbdullahOztoprak/Backend-Path/test/integration/testcontainers_setup"
 )
 
 func TestBalanceRepositoryIntegration(t *testing.T) {

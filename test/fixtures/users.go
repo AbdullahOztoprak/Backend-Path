@@ -1,6 +1,6 @@
 package fixtures
 
-import "go-backend-project/internal/domain/entity"
+import "github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
 
 var Users = []entity.User{
     {

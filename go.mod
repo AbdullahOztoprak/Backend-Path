@@ -1,4 +1,4 @@
-module go-backend-project
+module github.com/AbdullahOztoprak/Backend-Path
 
 go 1.23
 

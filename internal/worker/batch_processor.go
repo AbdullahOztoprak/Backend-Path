@@ -5,7 +5,7 @@ import (
     "log"
     "time"
 
-    "go-backend-project/internal/domain/service"
+    "github.com/AbdullahOztoprak/Backend-Path/internal/domain/service"
 )
 
 type BatchProcessor struct {

@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"go-backend-project/internal/domain/entity"
-	"go-backend-project/internal/domain/repository"
-	"go-backend-project/internal/application/validator"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/repository"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/application/validator"
 )
 
 type UserRepositoryMock struct {

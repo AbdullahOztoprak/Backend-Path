@@ -3,8 +3,8 @@ package api
 import (
     "github.com/gorilla/mux"
     "net/http"
-    "go-backend-project/internal/api/middleware"
-    "go-backend-project/internal/api/handler"
+    "github.com/AbdullahOztoprak/Backend-Path/internal/api/middleware"
+    "github.com/AbdullahOztoprak/Backend-Path/internal/api/handler"
 )
 
 func NewRouter() *mux.Router {

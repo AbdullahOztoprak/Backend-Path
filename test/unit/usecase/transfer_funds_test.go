@@ -5,10 +5,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"go-backend-project/internal/domain/entity"
-	"go-backend-project/internal/domain/repository"
-	"go-backend-project/internal/domain/service"
-	"go-backend-project/test/mocks"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/repository"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/service"
+	"github.com/AbdullahOztoprak/Backend-Path/test/mocks"
 )
 
 func TestTransferFunds(t *testing.T) {

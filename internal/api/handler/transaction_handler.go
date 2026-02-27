@@ -3,9 +3,9 @@ package handler
 import (
     "net/http"
     "github.com/gin-gonic/gin"
-    "go-backend-project/internal/application/usecase"
-    "go-backend-project/internal/domain/entity"
-    "go-backend-project/pkg/apperror"
+    "github.com/AbdullahOztoprak/Backend-Path/internal/application/usecase"
+    "github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
+    "github.com/AbdullahOztoprak/Backend-Path/pkg/apperror"
 )
 
 type TransactionHandler struct {

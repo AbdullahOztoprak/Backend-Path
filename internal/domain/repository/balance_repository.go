@@ -1,6 +1,6 @@
 package repository
 
-import "go-backend-project/internal/domain/entity"
+import "github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
 
 // BalanceRepository defines the interface for balance data operations.
 type BalanceRepository interface {

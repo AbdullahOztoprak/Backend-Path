@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"go-backend-project/internal/domain/entity"
-	"go-backend-project/internal/domain/repository"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/repository"
 )
 
 type BalanceRepoImpl struct {

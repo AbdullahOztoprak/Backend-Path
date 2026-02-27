@@ -3,8 +3,8 @@ package usecase
 import (
     "context"
     "errors"
-    "go-backend-project/internal/domain/repository"
-    "go-backend-project/internal/domain/entity"
+    "github.com/AbdullahOztoprak/Backend-Path/internal/domain/repository"
+    "github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
 )
 
 type GetBalanceUseCase struct {

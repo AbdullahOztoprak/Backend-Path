@@ -1,6 +1,6 @@
 package repository
 
-import "go-backend-project/internal/domain/entity"
+import "github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
 
 // UserRepository defines the interface for user data operations.
 type UserRepository interface {
