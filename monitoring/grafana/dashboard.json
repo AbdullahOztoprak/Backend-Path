@@ -1,0 +1,94 @@
+{
+  "annotations": [
+    {
+      "datasource": "Prometheus",
+      "editable": true,
+      "gridPos": {
+        "h": 8,
+        "i": "1",
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "targets": [
+        {
+          "expr": "http_requests_total",
+          "interval": "",
+          "legendFormat": "{{method}} {{route}}",
+          "refId": "A"
+        }
+      ],
+      "title": "HTTP Requests",
+      "type": "graph"
+    },
+    {
+      "datasource": "Prometheus",
+      "editable": true,
+      "gridPos": {
+        "h": 8,
+        "i": "2",
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[5m])",
+          "interval": "",
+          "legendFormat": "{{method}} {{route}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Request Rate",
+      "type": "graph"
+    },
+    {
+      "datasource": "Prometheus",
+      "editable": true,
+      "gridPos": {
+        "h": 8,
+        "i": "3",
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "http_request_duration_seconds",
+          "interval": "",
+          "legendFormat": "{{method}} {{route}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Request Duration",
+      "type": "graph"
+    },
+    {
+      "datasource": "Prometheus",
+      "editable": true,
+      "gridPos": {
+        "h": 8,
+        "i": "4",
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "up",
+          "interval": "",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Service Health",
+      "type": "graph"
+    }
+  ],
+  "title": "Application Monitoring Dashboard",
+  "version": 1
+}

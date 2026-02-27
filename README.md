@@ -1,6 +1,6 @@
 # Go Backend API Project
 
-Modern, secure and scalable backend API built with Go, featuring user management, transactions, and secure authentication.
+A modern, secure, and scalable backend API built with Go, featuring enhanced transaction hardening, robust authentication and authorization, clean architecture, observability, and automated testing.
 
 ## 📸 API Tests (Postman)
 
@@ -15,32 +15,39 @@ Modern, secure and scalable backend API built with Go, featuring user management
 
 ## 🎯 Project Overview
 
-This is a professional Go backend project that provides:
-- **User Registration & Authentication** with bcrypt password hashing
-- **Transaction Management** between users
+This project provides:
+- **User Registration & Authentication** with bcrypt password hashing and JWT tokens
+- **Role-Based Access Control (RBAC)** for fine-grained permissions
+- **Transaction Management** with enhanced security features
 - **Balance Tracking** with thread-safe operations
-- **RESTful API** with proper error handling
-- **PostgreSQL Database** integration
+- **RESTful API** with comprehensive error handling
+- **PostgreSQL Database** integration with migrations
+- **Redis** for caching and rate limiting
 - **Docker Support** for easy deployment
-- **Comprehensive Testing** with unit tests
+- **Observability** with structured logging, metrics, and tracing
+- **Comprehensive Testing** with unit, integration, and end-to-end tests
 
 ## 🚀 Technologies Used
 
 - **Go 1.23+** - Modern programming language
 - **PostgreSQL** - Reliable database
+- **Redis** - In-memory data structure store
 - **Docker & Docker Compose** - Containerization
 - **bcrypt** - Secure password hashing
 - **pgx** - PostgreSQL driver
 - **zerolog** - Structured logging
 - **godotenv** - Environment configuration
+- **Prometheus** - Monitoring and metrics
+- **Grafana** - Visualization of metrics
 
 ## 📋 Features
 
-✅ **Security**: Password hashing, input validation, secure authentication  
+✅ **Security**: Password hashing, JWT authentication, RBAC  
 ✅ **Clean Architecture**: Repository pattern, service layer, dependency injection  
 ✅ **Error Handling**: Consistent JSON error responses  
 ✅ **Logging**: Structured logging with request middleware  
-✅ **Testing**: Unit tests for business logic  
+✅ **Observability**: Metrics and tracing for monitoring  
+✅ **Testing**: Unit, integration, and end-to-end tests  
 ✅ **Docker Ready**: Multi-stage Dockerfile and docker-compose setup  
 
 ## 🛠️ Quick Start
@@ -77,13 +84,10 @@ cd Backend-Path/go-backend-project
 Copy-Item .env.example .env
 
 # Start everything with Docker
-
-> **Note:** Before running the Docker Compose command, make sure Docker Desktop is running and set to Linux containers. Otherwise, you may encounter errors like `unable to get image 'postgres:15-alpine'`.
-
 docker-compose up --build
 
 # Server will be available at http://localhost:8081
-
+```
 
 ### Option 2: Manual Setup
 
@@ -94,7 +98,7 @@ git clone https://github.com/AbdullahOztoprak/Backend-Path.git
 cd Backend-Path/go-backend-project
 
 # Start PostgreSQL database
-docker run --name postgres-db -e POSTGRES_PASSWORD=abdullah -p 5432:5432 -d postgres:15
+docker run --name postgres-db -e POSTGRES_PASSWORD=your_password -p 5432:5432 -d postgres:15
 
 # Create database and load schema
 docker exec -it postgres-db psql -U postgres -c "CREATE DATABASE go_backend_db;"
@@ -116,7 +120,7 @@ git clone https://github.com/AbdullahOztoprak/Backend-Path.git
 cd Backend-Path/go-backend-project
 
 # Start PostgreSQL database
-docker run --name postgres-db -e POSTGRES_PASSWORD=abdullah -p 5432:5432 -d postgres:15
+docker run --name postgres-db -e POSTGRES_PASSWORD=your_password -p 5432:5432 -d postgres:15
 
 # Create database and load schema
 docker exec -it postgres-db psql -U postgres -c "CREATE DATABASE go_backend_db;"
@@ -220,69 +224,30 @@ go-backend-project/
 │   └── main.go              # Application entry point
 ├── internal/
 │   ├── api/
-│   │   └── router.go        # HTTP handlers and routing
-│   ├── db/
-│   │   ├── connection.go    # Database connection
-│   │   └── schema.sql       # Database schema
-│   ├── models/
-│   │   ├── user.go          # User model with validation
-│   │   ├── transaction.go   # Transaction model
-│   │   └── balance.go       # Balance model
-│   ├── repository/
-│   │   ├── user_repository.go           # User data interface
-│   │   ├── pg_user_repository.go       # PostgreSQL implementation
-│   │   ├── transaction_repository.go   # Transaction data interface
-│   │   └── balance_repository.go       # Balance data interface
-│   ├── service/
-│   │   ├── user_service.go          # User business logic interface
-│   │   ├── user_service_impl.go     # User service implementation
-│   │   ├── transaction_service.go   # Transaction business logic
-│   │   └── balance_service.go       # Balance business logic
-│   └── worker/
-│       ├── transaction_worker.go    # Background transaction processing
-│       └── batch_processor.go      # Batch operations
-├── pkg/                    # Shared utilities
-├── configs/               # Configuration files
-├── Dockerfile            # Multi-stage Docker build
-├── docker-compose.yml    # Complete deployment setup
-├── .env.example         # Environment configuration template
-└── README.md           # Project documentation
-```
-
-### Docker Configuration Features
-
-Our `docker-compose.yml` includes production-ready features:
-
-- **Health Checks**: PostgreSQL container includes health monitoring to ensure database is ready
-- **Dependency Management**: Go application waits for PostgreSQL to be healthy before starting
-- **Automatic Restart**: Application automatically restarts on failure, preventing startup timing issues
-- **Network Isolation**: Services communicate through dedicated Docker network
-- **Volume Persistence**: Database data persists between container restarts
-
-## 🧪 Running Tests
-
-**For Linux/Mac:**
-```bash
-# Run all tests
-go test ./internal/service/...
-
-# Run tests with coverage
-go test -cover ./internal/service/...
-
-# Run specific test
-go test -run TestRegisterValidation ./internal/service/...
-```
-
-**For Windows (PowerShell):**
-```powershell
-# Run all tests
-go test ./internal/service/...
-
-# Run tests with coverage
-go test -cover ./internal/service/...
-
-# Run specific test
-go test -run TestRegisterValidation ./internal/service/...
+│   │   └── ...              # API handlers, middleware, and DTOs
+│   ├── domain/
+│   │   └── ...              # Domain entities, repositories, and services
+│   ├── application/
+│   │   └── ...              # Use cases and validators
+│   ├── infrastructure/
+│   │   └── ...              # Persistence, auth, observability, and messaging
+│   ├── worker/
+│   │   └── ...              # Background processing
+│   └── db/
+│       └── ...              # Database schema and migrations
+├── pkg/                     # Shared utilities
+├── test/                    # Testing files
+├── configs/                 # Configuration files
+├── deployments/             # Deployment configurations
+├── monitoring/              # Monitoring configurations
+├── scripts/                 # Utility scripts
+├── .env.example             # Environment configuration template
+├── .github/                 # GitHub workflows
+├── Makefile                 # Build and run commands
+├── go.mod                   # Go module definition
+├── go.sum                   # Go module checksums
+├── .golangci.yml            # Linting configuration
+└── README.md                # Project documentation
 ```
 
 ## 🔧 Development
@@ -321,6 +286,7 @@ DB_USER=postgres
 DB_PASSWORD=your_secure_password
 DB_NAME=go_backend_db
 JWT_SECRET=your_jwt_secret_for_production
+REDIS_URL=redis://localhost:6379
 ```
 
 ## 🔧 Troubleshooting
@@ -348,7 +314,7 @@ taskkill /PID <PID> /F
 
 **Database Connection Issues:**
 - Ensure PostgreSQL container is running: `docker ps`
-- Check database logs: `docker logs go_backend_postgres`
+- Check database logs: `docker logs postgres-db`
 - If you see "the database system is starting up" errors, the application will automatically retry thanks to healthcheck and restart policies in docker-compose.yml
 - For immediate restart of just the app: `docker-compose restart go_backend_app`
 
@@ -376,4 +342,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Go community for excellent documentation
 - PostgreSQL team for reliable database
+- Redis for caching and rate limiting
 - Docker for simplifying deployment
+- Prometheus and Grafana for observability

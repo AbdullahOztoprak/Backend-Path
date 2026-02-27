@@ -1,0 +1,58 @@
+application:
+  port: 8081
+  env: development
+  log_level: debug
+
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: your_secure_password
+  name: go_backend_db
+
+redis:
+  host: localhost
+  port: 6379
+  password: your_secure_password
+
+jwt:
+  secret: your_jwt_secret
+  expiration: 24h
+
+rate_limiting:
+  enabled: true
+  requests_per_minute: 100
+
+observability:
+  metrics_enabled: true
+  tracing_enabled: true
+
+cors:
+  allowed_origins:
+    - "*"
+  allowed_methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+  allowed_headers:
+    - Content-Type
+    - Authorization
+
+idempotency:
+  enabled: true
+  expiration: 24h
+
+security:
+  password_hashing:
+    cost: 10
+  token_refresh:
+    expiration: 30d
+
+features:
+  transaction_hardening: true
+  authentication_upgrade: true
+  authorization_upgrade: true
+  clean_architecture_refactor: true
+  test_automation_upgrade: true
