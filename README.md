@@ -1,347 +1,344 @@
-# Go Backend API Project
+# Backend-Path
 
-A modern, secure, and scalable backend API built with Go, featuring enhanced transaction hardening, robust authentication and authorization, clean architecture, observability, and automated testing.
+A production-grade Go backend API for fintech-style money transfers. Built with clean architecture, JWT authentication, PostgreSQL transaction hardening, Redis rate limiting, Prometheus metrics, and full CI/CD via GitHub Actions.
 
-## 📸 API Tests (Postman)
+---
 
-### User Registration
-![User Registration](go-backend-project/docs/screenshots/register.png)
+## Tech Stack
 
-### User Login
-![User Login](go-backend-project/docs/screenshots/login.png)
+| Layer | Technology |
+|---|---|
+| Language | Go 1.23 |
+| Router | gorilla/mux |
+| Database | PostgreSQL 15 (pgx/v4) |
+| Cache / Rate Limit | Redis (go-redis/v8) |
+| Auth | JWT (dgrijalva/jwt-go) |
+| Logging | logrus |
+| Config | YAML + env |
+| Metrics | Prometheus + Grafana |
+| Containerization | Docker + Docker Compose |
+| CI/CD | GitHub Actions |
+| Testing | testify, testcontainers |
 
-### Money Transfer
-![Money Transfer](go-backend-project/docs/screenshots/transaction.png)
+---
 
-## 🎯 Project Overview
+## Features
 
-This project provides:
-- **User Registration & Authentication** with bcrypt password hashing and JWT tokens
-- **Role-Based Access Control (RBAC)** for fine-grained permissions
-- **Transaction Management** with enhanced security features
-- **Balance Tracking** with thread-safe operations
-- **RESTful API** with comprehensive error handling
-- **PostgreSQL Database** integration with migrations
-- **Redis** for caching and rate limiting
-- **Docker Support** for easy deployment
-- **Observability** with structured logging, metrics, and tracing
-- **Comprehensive Testing** with unit, integration, and end-to-end tests
+- **JWT Authentication** — access token + refresh token
+- **Role-Based Access Control** — `admin` and `user` roles
+- **Transaction Hardening** — `SERIALIZABLE` isolation, `SELECT FOR UPDATE`, deadlock-safe ordering, idempotency keys
+- **Balance Management** — thread-safe balance reads and updates
+- **Rate Limiting** — per-IP request throttling via Redis
+- **CORS Middleware** — configurable allowed origins
+- **Structured Logging** — request ID and correlation ID on every log line
+- **Prometheus Metrics** — `/metrics` endpoint with request counters and latency histograms
+- **Health Checks** — `/api/v1/health` liveness probe
+- **Graceful Shutdown** — context-aware server shutdown
+- **Background Workers** — async transaction processing with retry and dead-letter queue
+- **Migrations** — versioned SQL migrations via shell script
+- **Full Test Suite** — unit, integration (testcontainers), E2E, and load tests (k6)
 
-## 🚀 Technologies Used
+---
 
-- **Go 1.23+** - Modern programming language
-- **PostgreSQL** - Reliable database
-- **Redis** - In-memory data structure store
-- **Docker & Docker Compose** - Containerization
-- **bcrypt** - Secure password hashing
-- **pgx** - PostgreSQL driver
-- **zerolog** - Structured logging
-- **godotenv** - Environment configuration
-- **Prometheus** - Monitoring and metrics
-- **Grafana** - Visualization of metrics
-
-## 📋 Features
-
-✅ **Security**: Password hashing, JWT authentication, RBAC  
-✅ **Clean Architecture**: Repository pattern, service layer, dependency injection  
-✅ **Error Handling**: Consistent JSON error responses  
-✅ **Logging**: Structured logging with request middleware  
-✅ **Observability**: Metrics and tracing for monitoring  
-✅ **Testing**: Unit, integration, and end-to-end tests  
-✅ **Docker Ready**: Multi-stage Dockerfile and docker-compose setup  
-
-## 🛠️ Quick Start
-
-### Prerequisites
-- **Go 1.23+** installed
-- **Docker Desktop** running
-- **Git** for cloning
-
-### Option 1: Docker Compose (Recommended)
-
-**For Linux/Mac:**
-```bash
-# Clone the repository
-git clone https://github.com/AbdullahOztoprak/Backend-Path.git
-cd Backend-Path/go-backend-project
-
-# Copy environment file
-cp .env.example .env
-
-# Start everything with Docker
-docker-compose up --build
-
-# Server will be available at http://localhost:8081
-```
-
-**For Windows (PowerShell):**
-```powershell
-# Clone the repository
-git clone https://github.com/AbdullahOztoprak/Backend-Path.git
-cd Backend-Path/go-backend-project
-
-# Copy environment file
-Copy-Item .env.example .env
-
-# Start everything with Docker
-docker-compose up --build
-
-# Server will be available at http://localhost:8081
-```
-
-### Option 2: Manual Setup
-
-**For Linux/Mac:**
-```bash
-# Clone the repository
-git clone https://github.com/AbdullahOztoprak/Backend-Path.git
-cd Backend-Path/go-backend-project
-
-# Start PostgreSQL database
-docker run --name postgres-db -e POSTGRES_PASSWORD=your_password -p 5432:5432 -d postgres:15
-
-# Create database and load schema
-docker exec -it postgres-db psql -U postgres -c "CREATE DATABASE go_backend_db;"
-docker cp internal/db/schema.sql postgres-db:/schema.sql
-docker exec -it postgres-db psql -U postgres -d go_backend_db -f /schema.sql
-
-# Copy and configure environment
-cp .env.example .env
-
-# Install dependencies and run
-go mod tidy
-go run cmd/main.go
-```
-
-**For Windows (PowerShell):**
-```powershell
-# Clone the repository
-git clone https://github.com/AbdullahOztoprak/Backend-Path.git
-cd Backend-Path/go-backend-project
-
-# Start PostgreSQL database
-docker run --name postgres-db -e POSTGRES_PASSWORD=your_password -p 5432:5432 -d postgres:15
-
-# Create database and load schema
-docker exec -it postgres-db psql -U postgres -c "CREATE DATABASE go_backend_db;"
-docker cp internal/db/schema.sql postgres-db:/schema.sql
-docker exec -it postgres-db psql -U postgres -d go_backend_db -f /schema.sql
-
-# Copy and configure environment
-Copy-Item .env.example .env
-
-# Install dependencies and run
-go mod tidy
-go run cmd/main.go
-```
-
-## 📚 API Documentation
-
-### Authentication
-**POST** `/api/v1/login`
-```json
-{
-  "username": "john_doe",
-  "password": "securepassword"
-}
-```
-
-### User Registration
-**POST** `/api/v1/users`
-```json
-{
-  "username": "john_doe",
-  "email": "john@example.com",
-  "password_hash": "securepassword",
-  "role": "user"
-}
-```
-
-### Get All Users
-**GET** `/api/v1/users`
-
-### Transactions
-**POST** `/api/v1/transactions`
-```json
-{
-  "from_user_id": 1,
-  "to_user_id": 2,
-  "amount": 100.50,
-  "description": "Payment for services"
-}
-```
-
-### Get Balances
-**GET** `/api/v1/balances`
-
-## 🧪 Testing the API
-
-### Using PowerShell (Windows)
-```powershell
-# Test if server is running
-Invoke-RestMethod -Uri "http://localhost:8081/api/v1/users" -Method GET
-
-# Create a new user
-$body = @{
-    username = "test_user"
-    email = "test@example.com"
-    password_hash = "password123"
-    role = "user"
-} | ConvertTo-Json
-
-Invoke-RestMethod -Uri "http://localhost:8081/api/v1/users" -Method POST -Body $body -ContentType "application/json"
-
-# Login (if login endpoint exists)
-$loginBody = @{
-    username = "test_user"
-    password = "password123"
-} | ConvertTo-Json
-
-Invoke-RestMethod -Uri "http://localhost:8081/api/v1/login" -Method POST -Body $loginBody -ContentType "application/json"
-```
-
-### Using curl (Linux/Mac)
-```bash
-# Test if server is running
-curl http://localhost:8081/api/v1/users
-
-# Create a new user
-curl -X POST http://localhost:8081/api/v1/users \
-  -H "Content-Type: application/json" \
-  -d '{"username":"test_user","email":"test@example.com","password_hash":"password123","role":"user"}'
-
-# Login
-curl -X POST http://localhost:8081/api/v1/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"test_user","password":"password123"}'
-```
-
-## 🏗️ Project Structure
+## Project Structure
 
 ```
-go-backend-project/
+Backend-Path/
 ├── cmd/
-│   └── main.go              # Application entry point
+│   └── main.go                        # Entry point, wiring, graceful shutdown
+├── configs/
+│   ├── config.go                      # Config struct loader
+│   ├── config.yaml                    # Default config
+│   └── config.production.yaml        # Production overrides
 ├── internal/
 │   ├── api/
-│   │   └── ...              # API handlers, middleware, and DTOs
+│   │   ├── router.go                  # Route registration
+│   │   ├── handler/                   # HTTP handlers
+│   │   ├── middleware/                # Auth, CORS, logging, rate limiter, RBAC
+│   │   └── dto/                       # Request / response types
 │   ├── domain/
-│   │   └── ...              # Domain entities, repositories, and services
+│   │   ├── entity/                    # Core domain models
+│   │   ├── repository/                # Repository interfaces
+│   │   └── service/                   # Domain service interfaces
 │   ├── application/
-│   │   └── ...              # Use cases and validators
+│   │   ├── usecase/                   # Business logic (register, login, transfer, ...)
+│   │   └── validator/                 # Input validation rules
 │   ├── infrastructure/
-│   │   └── ...              # Persistence, auth, observability, and messaging
-│   ├── worker/
-│   │   └── ...              # Background processing
+│   │   ├── persistence/postgres/      # PostgreSQL repository implementations
+│   │   ├── persistence/redis/         # Redis token store and rate limiter
+│   │   ├── auth/                      # JWT provider, bcrypt hasher, RBAC policy
+│   │   ├── observability/             # Logger, metrics, tracing, health
+│   │   └── messaging/                 # Event publisher
+│   ├── worker/                        # Async transaction worker, retry, DLQ
 │   └── db/
-│       └── ...              # Database schema and migrations
-├── pkg/                     # Shared utilities
-├── test/                    # Testing files
-├── configs/                 # Configuration files
-├── deployments/             # Deployment configurations
-├── monitoring/              # Monitoring configurations
-├── scripts/                 # Utility scripts
-├── .env.example             # Environment configuration template
-├── .github/                 # GitHub workflows
-├── Makefile                 # Build and run commands
-├── go.mod                   # Go module definition
-├── go.sum                   # Go module checksums
-├── .golangci.yml            # Linting configuration
-└── README.md                # Project documentation
+│       ├── schema.sql
+│       └── migrations/                # Versioned up/down SQL migrations
+├── pkg/
+│   ├── apperror/                      # Structured application errors
+│   ├── idempotency/                   # Idempotency key helpers
+│   └── pagination/                    # Cursor/offset pagination helpers
+├── test/
+│   ├── unit/                          # Unit tests (usecase, service, validator)
+│   ├── integration/                   # Repo tests with testcontainers
+│   ├── e2e/                           # Full HTTP round-trip tests
+│   ├── load/                          # k6 load test script
+│   ├── mocks/                         # Generated mocks
+│   └── fixtures/                      # Seed data helpers
+├── deployments/
+│   ├── docker/                        # Dockerfile, Dockerfile.test
+│   ├── docker-compose.yml
+│   ├── docker-compose.test.yml
+│   └── k8s/                           # Kubernetes manifests
+├── monitoring/
+│   ├── prometheus.yml
+│   ├── alerting/rules.yml
+│   └── grafana/dashboard.json
+├── scripts/
+│   ├── migrate.sh
+│   ├── seed.sh
+│   └── run_tests.sh
+├── .github/workflows/                 # CI (build + test) and CD (Docker + K8s)
+├── .env.example
+├── .gitignore
+├── .golangci.yml
+├── Makefile
+├── go.mod
+└── go.sum
 ```
 
-## 🔧 Development
+---
 
-### Adding New Features
-1. Create a new branch: `git checkout -b feat/your-feature-name`
-2. Implement your changes following the existing patterns
-3. Add tests for your new functionality
-4. Update documentation if needed
-5. Commit with conventional commit messages: `git commit -m "feat: add new feature"`
-6. Push and create a Pull Request
+## Quick Start
 
-### Code Organization
-- **Models**: Define data structures with validation rules
-- **Repositories**: Handle all database operations
-- **Services**: Contain business logic and validation
-- **API**: HTTP handlers and request/response handling
-- **Workers**: Background processing and concurrent operations
+### Prerequisites
 
-## 🚀 Deployment
+- Go 1.23+
+- Docker Desktop
 
-### Production Deployment
-1. Set production environment variables
-2. Use `docker-compose.prod.yml` for production setup
-3. Configure reverse proxy (nginx) if needed
-4. Set up SSL certificates
-5. Configure monitoring and logging
+### Option 1 — Docker Compose (recommended)
 
-### Environment Variables
 ```bash
-PORT=8081
-DATABASE_URL=postgres://user:password@host:port/dbname?sslmode=require
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=your_secure_password
-DB_NAME=go_backend_db
-JWT_SECRET=your_jwt_secret_for_production
-REDIS_URL=redis://localhost:6379
+git clone https://github.com/AbdullahOztoprak/Backend-Path.git
+cd Backend-Path
+
+cp .env.example .env
+
+docker-compose -f deployments/docker-compose.yml up --build
 ```
 
-## 🔧 Troubleshooting
+Server: `http://localhost:8081`
 
-### Common Issues
+### Option 2 — Run locally
 
-**Windows Users:**
-- Use `Copy-Item .env.example .env` instead of `cp .env.example .env`
-- Make sure Docker Desktop is running and set to Linux containers
-- If you get "bind: Only one usage of each socket address" error, stop other services using port 8081
+```bash
+git clone https://github.com/AbdullahOztoprak/Backend-Path.git
+cd Backend-Path
 
-**Port Issues:**
-```powershell
-# Check what's using port 8081
-netstat -ano | findstr :8081
+# Start Postgres and Redis
+docker run -d --name pg -e POSTGRES_PASSWORD=secret -p 5432:5432 postgres:15
+docker run -d --name redis -p 6379:6379 redis:alpine
 
-# Kill process using the port (replace PID with actual process ID)
-taskkill /PID <PID> /F
+cp .env.example .env
+# Edit .env with your DB credentials
+
+go mod tidy
+make migrate
+make run
 ```
 
-**Docker Issues:**
-- Make sure Docker Desktop is running
-- Try `docker-compose down` then `docker-compose up --build`
-- Clear Docker cache: `docker system prune -a`
+---
 
-**Database Connection Issues:**
-- Ensure PostgreSQL container is running: `docker ps`
-- Check database logs: `docker logs postgres-db`
-- If you see "the database system is starting up" errors, the application will automatically retry thanks to healthcheck and restart policies in docker-compose.yml
-- For immediate restart of just the app: `docker-compose restart go_backend_app`
+## Environment Variables
 
-## 🤝 Contributing
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `8081` | HTTP listen port |
+| `DATABASE_URL` | — | Full Postgres connection string |
+| `REDIS_URL` | `redis://localhost:6379` | Redis connection string |
+| `JWT_SECRET` | — | Access token signing secret |
+| `REFRESH_TOKEN_SECRET` | — | Refresh token signing secret |
+| `LOG_LEVEL` | `info` | Logging level |
+| `RATE_LIMIT` | `100` | Requests per minute per IP |
+| `CORS_ORIGINS` | `http://localhost:3000` | Comma-separated allowed origins |
+| `IDEMPOTENCY_KEY_EXPIRY` | `24h` | TTL for idempotency records |
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+---
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feat/amazing-feature`)
-3. Commit your Changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the Branch (`git push origin feat/amazing-feature`)
-5. Open a Pull Request
+## API Reference
 
-## 📄 License
+All protected routes require `Authorization: Bearer <access_token>`.
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Health
 
-## 👨‍💻 Author
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/api/v1/health` | No | Liveness probe |
+
+### Auth
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/api/v1/auth/login` | No | Login, returns access + refresh tokens |
+| POST | `/api/v1/auth/refresh` | No | Rotate refresh token |
+
+#### Login
+```bash
+curl -X POST http://localhost:8081/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"john_doe","password":"securepassword"}'
+```
+```json
+{
+  "access_token": "eyJ...",
+  "refresh_token": "eyJ...",
+  "expires_in": 3600
+}
+```
+
+### Users
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/api/v1/users` | No | Register a new user |
+| GET | `/api/v1/users` | Yes | List all users (admin) |
+
+#### Register
+```bash
+curl -X POST http://localhost:8081/api/v1/users \
+  -H "Content-Type: application/json" \
+  -d '{"username":"john_doe","email":"john@example.com","password":"securepassword","role":"user"}'
+```
+
+### Transactions
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/api/v1/transactions` | Yes | Transfer funds |
+| GET | `/api/v1/transactions` | Yes | List transactions |
+
+#### Transfer funds
+```bash
+curl -X POST http://localhost:8081/api/v1/transactions \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: uuid-v4-here" \
+  -d '{"from_user_id":1,"to_user_id":2,"amount":100.50,"description":"Payment"}'
+```
+
+### Balances
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/api/v1/balances` | Yes | Get current user balance |
+
+---
+
+## Development
+
+### Make commands
+
+```bash
+make build    # Build binary to ./bin/
+make run      # Build and run
+make test     # Run all tests
+make migrate  # Run database migrations
+make seed     # Seed test data
+make clean    # Remove build artifacts
+```
+
+### Running tests
+
+```bash
+# All tests
+go test ./... -v
+
+# Unit tests only
+go test ./test/unit/... -v
+
+# Integration tests (requires Docker)
+go test ./test/integration/... -v
+
+# E2E tests
+go test ./test/e2e/... -v
+
+# Load test (requires k6)
+k6 run test/load/k6_load_test.js
+```
+
+### Linting
+
+```bash
+golangci-lint run
+```
+
+---
+
+## CI/CD
+
+GitHub Actions runs on every push to `main`:
+
+1. `go mod tidy` + `go build`
+2. `go test ./... -v`
+3. Docker image build
+4. Push to Docker registry
+5. Deploy to Kubernetes
+
+Workflow files: [.github/workflows/](.github/workflows/)
+
+---
+
+## Monitoring
+
+Prometheus scrapes `/metrics`. Import `monitoring/grafana/dashboard.json` into Grafana for a pre-built dashboard.
+
+```bash
+# Start full monitoring stack
+docker-compose -f deployments/docker-compose.yml up prometheus grafana
+```
+
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3000`
+
+---
+
+## Troubleshooting
+
+**Port 8081 already in use**
+```bash
+lsof -ti:8081 | xargs kill -9
+```
+
+**Database not ready**
+```bash
+docker logs <postgres-container>
+# Wait for "database system is ready to accept connections", then restart the app
+docker-compose restart
+```
+
+**Module import errors**
+```bash
+go mod tidy
+```
+
+---
+
+## Contributing
+
+1. Fork the repo
+2. Create a branch: `git checkout -b feat/your-feature`
+3. Commit using conventional commits: `git commit -m "feat: add X"`
+4. Push and open a Pull Request
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE)
+
+---
+
+## Author
 
 **Abdullah Öztoprak**
 - GitHub: [@AbdullahOztoprak](https://github.com/AbdullahOztoprak)
-- Project Link: [https://github.com/AbdullahOztoprak/Backend-Path](https://github.com/AbdullahOztoprak/Backend-Path)
-
-## 🙏 Acknowledgments
-
-- Go community for excellent documentation
-- PostgreSQL team for reliable database
-- Redis for caching and rate limiting
-- Docker for simplifying deployment
-- Prometheus and Grafana for observability
+- Project: [github.com/AbdullahOztoprak/Backend-Path](https://github.com/AbdullahOztoprak/Backend-Path)
