@@ -1,4 +1,4 @@
-package integration_test
+package integration
 
 import (
 	"context"
@@ -8,12 +8,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/persistence/postgres"
 	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/repository"
-	"github.com/AbdullahOztoprak/Backend-Path/test/integration/testcontainers_setup"
 )
 
 func TestBalanceRepositoryIntegration(t *testing.T) {
 	ctx := context.Background()
-	db, cleanup := testcontainers_setup.SetupPostgres(t)
+	db, cleanup := SetupPostgres(t)
 	defer cleanup()
 
 	balanceRepo := postgres.NewBalanceRepository(db)

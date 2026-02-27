@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/your_project/internal/application/usecase"
-	"github.com/your_project/internal/domain/entity"
-	"github.com/your_project/internal/infrastructure/observability"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/application/usecase"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/observability"
 )
 
 type UserHandler struct {

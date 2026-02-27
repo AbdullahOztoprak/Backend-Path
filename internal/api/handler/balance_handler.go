@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yourusername/go-backend-project/internal/application/usecase"
-	"github.com/yourusername/go-backend-project/internal/domain/entity"
-	"github.com/yourusername/go-backend-project/internal/infrastructure/observability"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/application/usecase"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/observability"
 )
 
 type BalanceHandler struct {

@@ -6,7 +6,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"github.com/your_project/internal/infrastructure/auth"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/auth"
 )
 
 func JWTAuthMiddleware() gin.HandlerFunc {

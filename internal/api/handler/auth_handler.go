@@ -3,9 +3,9 @@ package handler
 import (
 	"net/http"
 	"github.com/gin-gonic/gin"
-	"github.com/your_project/internal/application/usecase"
-	"github.com/your_project/internal/infrastructure/auth"
-	"github.com/your_project/internal/api/dto"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/application/usecase"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/auth"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/api/dto"
 )
 
 type AuthHandler struct {

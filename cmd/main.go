@@ -4,11 +4,11 @@ import (
     "log"
     "net/http"
     "github.com/gorilla/mux"
-    "github.com/yourusername/go-backend-project/internal/api/middleware"
-    "github.com/yourusername/go-backend-project/internal/api/router"
-    "github.com/yourusername/go-backend-project/internal/infrastructure/observability"
-    "github.com/yourusername/go-backend-project/internal/infrastructure/persistence/postgres"
-    "github.com/yourusername/go-backend-project/configs"
+    "github.com/AbdullahOztoprak/Backend-Path/internal/api/middleware"
+    "github.com/AbdullahOztoprak/Backend-Path/internal/api/router"
+    "github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/observability"
+    "github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/persistence/postgres"
+    "github.com/AbdullahOztoprak/Backend-Path/configs"
 )
 
 func main() {
