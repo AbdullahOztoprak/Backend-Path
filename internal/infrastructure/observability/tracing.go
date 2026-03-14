@@ -2,11 +2,11 @@ package observability
 
 import (
     "context"
+    "log"
+
     "github.com/opentracing/opentracing-go"
     "github.com/opentracing/opentracing-go/ext"
-    "github.com/uber/jaeger-client-go"
     "github.com/uber/jaeger-client-go/config"
-    "log"
 )
 
 type Tracer struct {
@@ -30,6 +30,7 @@ func NewTracer(serviceName string) *Tracer {
     if err != nil {
         log.Fatalf("could not initialize jaeger tracer: %v", err)
     }
+    _ = closer
     opentracing.SetGlobalTracer(tracer)
 
     return &Tracer{tracer: tracer}

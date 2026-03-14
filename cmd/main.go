@@ -1,47 +1,60 @@
 package main
 
 import (
-    "log"
+    "context"
+    "errors"
     "net/http"
-    "github.com/gorilla/mux"
-    "github.com/AbdullahOztoprak/Backend-Path/internal/api/middleware"
-    "github.com/AbdullahOztoprak/Backend-Path/internal/api/router"
-    "github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/observability"
-    "github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/persistence/postgres"
-    "github.com/AbdullahOztoprak/Backend-Path/configs"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
+
+    "log"
+
+    "github.com/AbdullahOztoprak/Backend-Path/internal/api"
+    "github.com/AbdullahOztoprak/Backend-Path/internal/api/handler"
 )
 
 func main() {
-    // Load configuration
-    config, err := configs.LoadConfig()
-    if err != nil {
-        log.Fatalf("could not load config: %v", err)
+    deps := api.Dependencies{
+        HealthHandler:      handler.NewHealthHandler(),
+        AuthHandler:        handler.NewAuthHandler(nil),
+        UserHandler:        handler.NewUserHandler(nil),
+        TransactionHandler: handler.NewTransactionHandler(nil),
+        BalanceHandler:     handler.NewBalanceHandler(nil),
     }
 
-    // Initialize observability
-    observability.InitLogger(config.LogLevel)
-    observability.InitMetrics()
+    r := api.NewRouter(deps)
 
-    // Connect to the database
-    db, err := postgres.Connect(config.DatabaseURL)
-    if err != nil {
-        log.Fatalf("could not connect to database: %v", err)
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "8081"
     }
-    defer db.Close()
 
-    // Set up the router
-    r := mux.NewRouter()
-    r.Use(middleware.LoggingMiddleware)
-    r.Use(middleware.CORSMiddleware)
-    r.Use(middleware.RequestIDMiddleware)
-    r.Use(middleware.RateLimiterMiddleware)
-
-    // Initialize routes
-    router.SetupRoutes(r)
-
-    // Start the server
-    log.Printf("Starting server on port %s", config.Port)
-    if err := http.ListenAndServe(":"+config.Port, r); err != nil {
-        log.Fatalf("could not start server: %v", err)
+    server := &http.Server{
+        Addr:              ":" + port,
+        Handler:           r,
+        ReadHeaderTimeout: 5 * time.Second,
     }
+
+    go func() {
+        log.Printf("Starting server on port %s", port)
+        if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+            log.Fatalf("could not start server: %v", err)
+        }
+    }()
+
+    shutdownSignal := make(chan os.Signal, 1)
+    signal.Notify(shutdownSignal, syscall.SIGINT, syscall.SIGTERM)
+    <-shutdownSignal
+
+    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+
+    if err := server.Shutdown(ctx); err != nil {
+        log.Printf("graceful shutdown failed: %v", err)
+        return
+    }
+
+    log.Println("server stopped gracefully")
 }

@@ -2,33 +2,30 @@ package service
 
 import (
 	"errors"
-	"time"
+	"strconv"
 
 	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
 	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/repository"
 	"github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/auth"
-	"github.com/AbdullahOztoprak/Backend-Path/pkg/apperror"
 )
 
 type AuthService struct {
-	userRepo       repository.UserRepository
-	jwtProvider    auth.JWTProvider
-	bcryptHasher   auth.BcryptHasher
-	tokenStore     auth.TokenStore
+	userRepo      repository.UserRepository
+	jwtProvider   *auth.JWTProvider
+	bcryptHasher  *auth.BcryptHasher
 }
 
-func NewAuthService(userRepo repository.UserRepository, jwtProvider auth.JWTProvider, bcryptHasher auth.BcryptHasher, tokenStore auth.TokenStore) *AuthService {
+func NewAuthService(userRepo repository.UserRepository, jwtProvider *auth.JWTProvider, bcryptHasher *auth.BcryptHasher) *AuthService {
 	return &AuthService{
-		userRepo:    userRepo,
-		jwtProvider: jwtProvider,
+		userRepo:     userRepo,
+		jwtProvider:  jwtProvider,
 		bcryptHasher: bcryptHasher,
-		tokenStore:  tokenStore,
 	}
 }
 
 func (s *AuthService) Register(username, email, password string) (*entity.User, error) {
 	if username == "" || email == "" || password == "" {
-		return nil, apperror.NewBadRequestError("username, email, and password are required")
+		return nil, errors.New("username, email, and password are required")
 	}
 
 	hashedPassword, err := s.bcryptHasher.Hash(password)
@@ -50,16 +47,19 @@ func (s *AuthService) Register(username, email, password string) (*entity.User, 
 }
 
 func (s *AuthService) Login(username, password string) (string, error) {
-	user, err := s.userRepo.FindByUsername(username)
+	user, err := s.userRepo.GetByUsername(username)
 	if err != nil {
 		return "", err
 	}
-
-	if !s.bcryptHasher.Compare(password, user.Password) {
+	if user == nil {
 		return "", errors.New("invalid credentials")
 	}
 
-	token, err := s.jwtProvider.GenerateToken(user.ID, user.Role)
+	if err := s.bcryptHasher.Compare(user.Password, password); err != nil {
+		return "", errors.New("invalid credentials")
+	}
+
+	token, err := s.jwtProvider.GenerateToken(strconv.FormatInt(user.ID, 10), []string{user.Role})
 	if err != nil {
 		return "", err
 	}
@@ -68,16 +68,12 @@ func (s *AuthService) Login(username, password string) (string, error) {
 }
 
 func (s *AuthService) RefreshToken(oldToken string) (string, error) {
-	claims, err := s.jwtProvider.ValidateToken(oldToken)
+	userID, err := s.jwtProvider.ValidateToken(oldToken)
 	if err != nil {
 		return "", err
 	}
 
-	if time.Now().After(claims.ExpiresAt) {
-		return "", errors.New("token expired")
-	}
-
-	newToken, err := s.jwtProvider.GenerateToken(claims.UserID, claims.Role)
+	newToken, err := s.jwtProvider.GenerateToken(userID, []string{"user"})
 	if err != nil {
 		return "", err
 	}
@@ -86,5 +82,8 @@ func (s *AuthService) RefreshToken(oldToken string) (string, error) {
 }
 
 func (s *AuthService) Logout(userID string) error {
-	return s.tokenStore.Remove(userID)
+	if userID == "" {
+		return errors.New("user id is required")
+	}
+	return nil
 }

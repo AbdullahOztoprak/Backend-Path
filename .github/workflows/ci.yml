@@ -30,8 +30,10 @@ jobs:
       - name: Build the application
         run: go build -o go-backend-project ./cmd/main.go
 
-      - name: Run linters
-        run: golangci-lint run
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
 
       - name: Upload coverage report
         run: go test -coverprofile=coverage.out ./...

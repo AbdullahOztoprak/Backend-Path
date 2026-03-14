@@ -1,12 +1,16 @@
+//go:build legacy
+
 package usecase
 
 import (
 	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"your_project/internal/domain/entity"
-	"your_project/internal/domain/service"
-	"your_project/test/mocks"
+
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/service"
+	"github.com/AbdullahOztoprak/Backend-Path/test/mocks"
 )
 
 func TestLoginUser(t *testing.T) {

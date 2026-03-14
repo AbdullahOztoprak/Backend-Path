@@ -2,8 +2,6 @@ package usecase
 
 import (
 	"context"
-	"errors"
-	"time"
 
 	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
 	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/repository"
@@ -19,12 +17,8 @@ func NewListTransactionsUseCase(repo repository.TransactionRepository) *ListTran
 	}
 }
 
-func (uc *ListTransactionsUseCase) Execute(ctx context.Context, userID int, startDate, endDate time.Time) ([]entity.Transaction, error) {
-	if startDate.After(endDate) {
-		return nil, errors.New("start date cannot be after end date")
-	}
-
-	transactions, err := uc.transactionRepo.ListByUserIDAndDateRange(ctx, userID, startDate, endDate)
+func (uc *ListTransactionsUseCase) Execute(ctx context.Context, userID string) ([]entity.Transaction, error) {
+	transactions, err := uc.transactionRepo.ListByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

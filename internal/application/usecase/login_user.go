@@ -3,12 +3,11 @@ package usecase
 import (
 	"context"
 	"errors"
+	"strconv"
 	"time"
 
-	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
-	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/service"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/repository"
 	"github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/auth"
-	"github.com/AbdullahOztoprak/Backend-Path/pkg/apperror"
 )
 
 type LoginUserInput struct {
@@ -23,38 +22,46 @@ type LoginUserOutput struct {
 }
 
 type LoginUserUseCase struct {
-	authService service.AuthService
-	userService service.UserService
+	userRepo    repository.UserRepository
+	jwtProvider *auth.JWTProvider
+	hasher      *auth.BcryptHasher
 }
 
-func NewLoginUserUseCase(authService service.AuthService, userService service.UserService) *LoginUserUseCase {
+func NewLoginUserUseCase(userRepo repository.UserRepository, jwtProvider *auth.JWTProvider, hasher *auth.BcryptHasher) *LoginUserUseCase {
 	return &LoginUserUseCase{
-		authService: authService,
-		userService: userService,
+		userRepo:    userRepo,
+		jwtProvider: jwtProvider,
+		hasher:      hasher,
 	}
 }
 
 func (uc *LoginUserUseCase) Execute(ctx context.Context, input LoginUserInput) (LoginUserOutput, error) {
-	user, err := uc.userService.FindByUsername(ctx, input.Username)
+	_ = ctx
+
+	if uc.userRepo == nil || uc.jwtProvider == nil || uc.hasher == nil {
+		return LoginUserOutput{}, errors.New("login use case dependencies are not configured")
+	}
+
+	user, err := uc.userRepo.GetByUsername(input.Username)
 	if err != nil {
-		if errors.Is(err, apperror.ErrNotFound) {
-			return LoginUserOutput{}, apperror.ErrInvalidCredentials
-		}
 		return LoginUserOutput{}, err
 	}
-
-	if err := uc.authService.ComparePassword(user.PasswordHash, input.Password); err != nil {
-		return LoginUserOutput{}, apperror.ErrInvalidCredentials
+	if user == nil {
+		return LoginUserOutput{}, errors.New("invalid credentials")
 	}
 
-	token, refreshToken, err := uc.authService.GenerateTokens(user)
+	if err := uc.hasher.Compare(user.Password, input.Password); err != nil {
+		return LoginUserOutput{}, errors.New("invalid credentials")
+	}
+
+	token, err := uc.jwtProvider.GenerateToken(strconv.FormatInt(user.ID, 10), []string{user.Role})
 	if err != nil {
 		return LoginUserOutput{}, err
 	}
 
 	return LoginUserOutput{
 		Token:        token,
-		RefreshToken: refreshToken,
+		RefreshToken: token,
 		ExpiresAt:    time.Now().Add(24 * time.Hour), // Token expiration time
 	}, nil
 }

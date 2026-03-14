@@ -2,9 +2,9 @@ package redis
 
 import (
 	"context"
-	"github.com/go-redis/redis/v8"
 	"log"
-	"time"
+
+	"github.com/go-redis/redis/v8"
 )
 
 var ctx = context.Background()

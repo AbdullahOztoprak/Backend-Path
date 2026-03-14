@@ -5,6 +5,7 @@ import (
     "fmt"
     "log"
     "os"
+    "strconv"
     "time"
 
     _ "github.com/lib/pq"
@@ -47,6 +48,11 @@ func NewPostgresConnection() (*sql.DB, error) {
 
     log.Println("Successfully connected to the PostgreSQL database")
     return db, nil
+}
+
+// NewConnection keeps backward compatibility with older call sites.
+func NewConnection() (*sql.DB, error) {
+    return NewPostgresConnection()
 }
 
 func getEnv(key, fallback string) string {

@@ -1,10 +1,11 @@
 package usecase
 
 import (
-    "context"
-    "errors"
-    "github.com/AbdullahOztoprak/Backend-Path/internal/domain/repository"
-    "github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
+	"context"
+	"errors"
+
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/repository"
 )
 
 type GetBalanceUseCase struct {
@@ -18,11 +19,13 @@ func NewGetBalanceUseCase(balanceRepo repository.BalanceRepository) *GetBalanceU
 }
 
 func (uc *GetBalanceUseCase) Execute(ctx context.Context, userID int) (*entity.Balance, error) {
+	_ = ctx
+
     if userID <= 0 {
         return nil, errors.New("invalid user ID")
     }
 
-    balance, err := uc.balanceRepo.GetBalanceByUserID(ctx, userID)
+    balance, err := uc.balanceRepo.GetBalance(userID)
     if err != nil {
         return nil, err
     }

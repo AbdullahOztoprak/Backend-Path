@@ -1,42 +1,70 @@
 package api
 
 import (
-    "github.com/gorilla/mux"
     "net/http"
-    "github.com/AbdullahOztoprak/Backend-Path/internal/api/middleware"
+
+    "github.com/gorilla/mux"
+
     "github.com/AbdullahOztoprak/Backend-Path/internal/api/handler"
+    "github.com/AbdullahOztoprak/Backend-Path/internal/api/middleware"
+    "github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/observability"
 )
 
-func NewRouter() *mux.Router {
-    router := mux.NewRouter()
+type Dependencies struct {
+    HealthHandler      *handler.HealthHandler
+    AuthHandler        *handler.AuthHandler
+    UserHandler        *handler.UserHandler
+    TransactionHandler *handler.TransactionHandler
+    BalanceHandler     *handler.BalanceHandler
+}
 
-    // Health check
-    router.HandleFunc("/api/v1/health", handler.HealthHandler).Methods(http.MethodGet)
+func NewRouter(deps Dependencies) *mux.Router {
+    r := mux.NewRouter()
+    r.Use(middleware.RequestIDMiddleware)
+    r.Use(middleware.LoggingMiddleware)
+    r.Use(middleware.RecoveryMiddleware)
+    r.Use(middleware.CORSMiddleware)
+    r.Use(observability.MetricsMiddleware)
+    r.Use(middleware.RateLimiterMiddleware)
 
-    // User routes
-    userRouter := router.PathPrefix("/api/v1/users").Subrouter()
-    userRouter.HandleFunc("", handler.CreateUserHandler).Methods(http.MethodPost)
-    userRouter.HandleFunc("", handler.ListUsersHandler).Methods(http.MethodGet)
-    userRouter.Use(middleware.AuthMiddleware)
+    healthHandler := deps.HealthHandler
+    if healthHandler == nil {
+        healthHandler = handler.NewHealthHandler()
+    }
 
-    // Authentication routes
-    authRouter := router.PathPrefix("/api/v1/auth").Subrouter()
-    authRouter.HandleFunc("/login", handler.LoginHandler).Methods(http.MethodPost)
-    authRouter.HandleFunc("/refresh", handler.RefreshTokenHandler).Methods(http.MethodPost)
+    authHandler := deps.AuthHandler
+    if authHandler == nil {
+        authHandler = handler.NewAuthHandler(nil)
+    }
 
-    // Transaction routes
-    transactionRouter := router.PathPrefix("/api/v1/transactions").Subrouter()
-    transactionRouter.HandleFunc("", handler.TransferFundsHandler).Methods(http.MethodPost)
-    transactionRouter.HandleFunc("", handler.ListTransactionsHandler).Methods(http.MethodGet)
-    transactionRouter.Use(middleware.AuthMiddleware)
+    userHandler := deps.UserHandler
+    if userHandler == nil {
+        userHandler = handler.NewUserHandler(nil)
+    }
 
-    // Balance routes
-    balanceRouter := router.PathPrefix("/api/v1/balances").Subrouter()
-    balanceRouter.HandleFunc("", handler.GetBalanceHandler).Methods(http.MethodGet)
-    balanceRouter.Use(middleware.AuthMiddleware)
+    transactionHandler := deps.TransactionHandler
+    if transactionHandler == nil {
+        transactionHandler = handler.NewTransactionHandler(nil)
+    }
 
-    // Apply CORS middleware
-    router.Use(middleware.CORSMiddleware)
+    balanceHandler := deps.BalanceHandler
+    if balanceHandler == nil {
+        balanceHandler = handler.NewBalanceHandler(nil)
+    }
 
-    return router
+    v1 := r.PathPrefix("/api/v1").Subrouter()
+    v1.HandleFunc("/health", healthHandler.HealthCheck).Methods(http.MethodGet)
+    v1.HandleFunc("/auth/login", authHandler.LoginUser).Methods(http.MethodPost)
+    v1.HandleFunc("/auth/refresh", authHandler.RefreshToken).Methods(http.MethodPost)
+    v1.HandleFunc("/users", userHandler.RegisterUser).Methods(http.MethodPost)
+
+    protected := v1.NewRoute().Subrouter()
+    protected.Use(middleware.AuthMiddleware)
+    protected.HandleFunc("/transactions", transactionHandler.TransferFunds).Methods(http.MethodPost)
+    protected.HandleFunc("/transactions", transactionHandler.ListTransactions).Methods(http.MethodGet)
+    protected.HandleFunc("/balances", balanceHandler.GetBalance).Methods(http.MethodGet)
+
+    r.Handle("/metrics", observability.MetricsHandler()).Methods(http.MethodGet)
+
+    return r
 }

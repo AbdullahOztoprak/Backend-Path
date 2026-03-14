@@ -3,6 +3,7 @@ package configs
 import (
     "log"
     "os"
+    "strconv"
 
     "github.com/joho/godotenv"
     "gopkg.in/yaml.v2"
@@ -56,7 +57,11 @@ func LoadConfig(filePath string) (*Config, error) {
         config.LogLevel = logLevel
     }
     if rateLimit := os.Getenv("RATE_LIMIT"); rateLimit != "" {
-        config.RateLimit = rateLimit
+        parsedRateLimit, err := strconv.Atoi(rateLimit)
+        if err != nil {
+            return nil, err
+        }
+        config.RateLimit = parsedRateLimit
     }
     if environment := os.Getenv("ENVIRONMENT"); environment != "" {
         config.Environment = environment

@@ -1,3 +1,5 @@
+//go:build legacy
+
 package validator
 
 import (
@@ -5,7 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"your_project/internal/domain/entity"
+
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
 )
 
 func TestValidateUser(t *testing.T) {

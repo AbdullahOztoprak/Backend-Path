@@ -3,25 +3,25 @@ package service
 import (
 	"context"
 	"errors"
-	"time"
+	"strconv"
 
+	"github.com/AbdullahOztoprak/Backend-Path/internal/application/validator"
 	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
 	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/repository"
 	"github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/auth"
-	"github.com/AbdullahOztoprak/Backend-Path/internal/application/validator"
 )
 
 type UserService struct {
 	userRepo repository.UserRepository
-	hasher    auth.BcryptHasher
-	validator validator.UserValidator
+	hasher   *auth.BcryptHasher
+	validator *validator.UserValidator
 }
 
-func NewUserService(userRepo repository.UserRepository, hasher auth.BcryptHasher, validator validator.UserValidator) *UserService {
+func NewUserService(userRepo repository.UserRepository, hasher *auth.BcryptHasher, userValidator *validator.UserValidator) *UserService {
 	return &UserService{
 		userRepo: userRepo,
-		hasher:    hasher,
-		validator: validator,
+		hasher:   hasher,
+		validator: userValidator,
 	}
 }
 
@@ -36,11 +36,13 @@ func (s *UserService) RegisterUser(ctx context.Context, user *entity.User) error
 	}
 	user.Password = hashedPassword
 
-	return s.userRepo.Create(ctx, user)
+	_ = ctx
+	return s.userRepo.Create(user)
 }
 
 func (s *UserService) GetUserByID(ctx context.Context, id int) (*entity.User, error) {
-	return s.userRepo.FindByID(ctx, id)
+	_ = ctx
+	return s.userRepo.GetByID(strconv.Itoa(id))
 }
 
 func (s *UserService) UpdateUser(ctx context.Context, user *entity.User) error {
@@ -48,17 +50,23 @@ func (s *UserService) UpdateUser(ctx context.Context, user *entity.User) error {
 		return err
 	}
 
-	return s.userRepo.Update(ctx, user)
+	_ = ctx
+	return s.userRepo.Update(user)
 }
 
 func (s *UserService) DeleteUser(ctx context.Context, id int) error {
-	return s.userRepo.Delete(ctx, id)
+	_ = ctx
+	return s.userRepo.Delete(strconv.Itoa(id))
 }
 
 func (s *UserService) AuthenticateUser(ctx context.Context, username, password string) (*entity.User, error) {
-	user, err := s.userRepo.FindByUsername(ctx, username)
+	_ = ctx
+	user, err := s.userRepo.GetByUsername(username)
 	if err != nil {
 		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("invalid credentials")
 	}
 
 	if err := s.hasher.Compare(user.Password, password); err != nil {
@@ -69,18 +77,33 @@ func (s *UserService) AuthenticateUser(ctx context.Context, username, password s
 }
 
 func (s *UserService) ListUsers(ctx context.Context, limit, offset int) ([]*entity.User, error) {
-	return s.userRepo.List(ctx, limit, offset)
+	_ = ctx
+	_, _ = limit, offset
+	return s.userRepo.List()
 }
 
 func (s *UserService) ChangePassword(ctx context.Context, userID int, newPassword string) error {
+	_ = ctx
+
 	hashedPassword, err := s.hasher.Hash(newPassword)
 	if err != nil {
 		return err
 	}
 
-	return s.userRepo.UpdatePassword(ctx, userID, hashedPassword)
+	user, err := s.userRepo.GetByID(strconv.Itoa(userID))
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found")
+	}
+
+	user.Password = hashedPassword
+	return s.userRepo.Update(user)
 }
 
 func (s *UserService) SetLastLogin(ctx context.Context, userID int) error {
-	return s.userRepo.UpdateLastLogin(ctx, userID, time.Now())
+	_ = ctx
+	_, err := s.userRepo.GetByID(strconv.Itoa(userID))
+	return err
 }

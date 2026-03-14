@@ -1,52 +1,47 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-	"github.com/AbdullahOztoprak/Backend-Path/internal/application/usecase"
-	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
-	"github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/observability"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/api/middleware"
 )
 
+type BalanceOutput struct {
+	UserID           string  `json:"user_id"`
+	AvailableBalance float64 `json:"available_balance"`
+	Currency         string  `json:"currency"`
+}
+
+type BalanceUseCase interface {
+	Get(ctx context.Context, userID string) (BalanceOutput, error)
+}
+
 type BalanceHandler struct {
-	balanceUseCase usecase.GetBalanceUseCase
-	logger         observability.Logger
+	balanceUseCase BalanceUseCase
 }
 
-func NewBalanceHandler(balanceUseCase usecase.GetBalanceUseCase, logger observability.Logger) *BalanceHandler {
-	return &BalanceHandler{
-		balanceUseCase: balanceUseCase,
-		logger:         logger,
+func NewBalanceHandler(balanceUseCase BalanceUseCase) *BalanceHandler {
+	return &BalanceHandler{balanceUseCase: balanceUseCase}
+}
+
+func (h *BalanceHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
+	if h.balanceUseCase == nil {
+		writeError(w, http.StatusServiceUnavailable, "balance service not configured")
+		return
 	}
-}
 
-func (h *BalanceHandler) GetBalance(c *gin.Context) {
-	userID := c.Param("user_id")
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok || userID == "" {
+		writeError(w, http.StatusUnauthorized, "missing authenticated user")
+		return
+	}
 
-	balance, err := h.balanceUseCase.Execute(userID)
+	balance, err := h.balanceUseCase.Get(r.Context(), userID)
 	if err != nil {
-		h.logger.Error("Failed to get balance", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve balance"})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"balance": balance})
-}
-
-func (h *BalanceHandler) UpdateBalance(c *gin.Context) {
-	var balance entity.Balance
-	if err := c.ShouldBindJSON(&balance); err != nil {
-		h.logger.Error("Invalid input", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-		return
-	}
-
-	if err := h.balanceUseCase.Update(&balance); err != nil {
-		h.logger.Error("Failed to update balance", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to update balance"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Balance updated successfully"})
+	writeJSON(w, http.StatusOK, balance)
 }
