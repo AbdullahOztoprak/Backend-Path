@@ -1,83 +1,74 @@
 package handler
 
 import (
+	"context"
 	"net/http"
+	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/AbdullahOztoprak/Backend-Path/internal/application/usecase"
-	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
-	"github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/observability"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/api/dto"
 )
 
+type CreateUserInput struct {
+	Username string
+	Email    string
+	Password string
+	Role     string
+}
+
+type CreateUserOutput struct {
+	ID        string
+	Username  string
+	Email     string
+	Role      string
+	CreatedAt time.Time
+}
+
+type UserUseCase interface {
+	Create(ctx context.Context, input CreateUserInput) (CreateUserOutput, error)
+}
+
 type UserHandler struct {
-	userUseCase usecase.UserUseCase
-	logger      observability.Logger
+	userUseCase UserUseCase
 }
 
-func NewUserHandler(userUseCase usecase.UserUseCase, logger observability.Logger) *UserHandler {
-	return &UserHandler{
-		userUseCase: userUseCase,
-		logger:      logger,
-	}
+func NewUserHandler(userUseCase UserUseCase) *UserHandler {
+	return &UserHandler{userUseCase: userUseCase}
 }
 
-// RegisterUser handles user registration
-func (h *UserHandler) RegisterUser(c *gin.Context) {
-	var user entity.User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		h.logger.Error("Failed to bind user data", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+// RegisterUser handles user registration.
+func (h *UserHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
+	if h.userUseCase == nil {
+		writeError(w, http.StatusServiceUnavailable, "user service not configured")
 		return
 	}
 
-	if err := h.userUseCase.RegisterUser(&user); err != nil {
-		h.logger.Error("Failed to register user", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Registration failed"})
+	var req dto.UserRegistrationRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid input")
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
-}
+	role := req.Role
+	if role == "" {
+		role = "user"
+	}
 
-// GetUser retrieves a user by ID
-func (h *UserHandler) GetUser(c *gin.Context) {
-	userID := c.Param("id")
-	user, err := h.userUseCase.GetUserByID(userID)
+	out, err := h.userUseCase.Create(r.Context(), CreateUserInput{
+		Username: req.Username,
+		Email:    req.Email,
+		Password: req.Password,
+		Role:     role,
+	})
 	if err != nil {
-		h.logger.Error("Failed to get user", err)
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
-}
-
-// UpdateUser updates user information
-func (h *UserHandler) UpdateUser(c *gin.Context) {
-	var user entity.User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		h.logger.Error("Failed to bind user data", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-		return
-	}
-
-	if err := h.userUseCase.UpdateUser(&user); err != nil {
-		h.logger.Error("Failed to update user", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Update failed"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
-}
-
-// DeleteUser deletes a user by ID
-func (h *UserHandler) DeleteUser(c *gin.Context) {
-	userID := c.Param("id")
-	if err := h.userUseCase.DeleteUser(userID); err != nil {
-		h.logger.Error("Failed to delete user", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Deletion failed"})
-		return
-	}
-
-	c.JSON(http.StatusNoContent, nil)
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"id":         out.ID,
+		"username":   out.Username,
+		"email":      out.Email,
+		"role":       out.Role,
+		"created_at": out.CreatedAt,
+	})
 }

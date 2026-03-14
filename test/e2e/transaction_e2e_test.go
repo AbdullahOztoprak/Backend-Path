@@ -1,79 +1,87 @@
 package e2e
 
 import (
-    "bytes"
-    "encoding/json"
-    "net/http"
-    "net/http/httptest"
-    "testing"
+	"bytes"
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
 
-    "github.com/stretchr/testify/assert"
-    "github.com/AbdullahOztoprak/Backend-Path/internal/api"
-    "github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/persistence/postgres"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/AbdullahOztoprak/Backend-Path/internal/api"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/api/dto"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/api/handler"
 )
 
-func TestTransactionE2E(t *testing.T) {
-    // Setup the database connection and router
-    db, err := postgres.NewConnection()
-    if err != nil {
-        t.Fatalf("could not connect to database: %v", err)
-    }
-    defer db.Close()
+type fakeTransactionUseCase struct{}
 
-    router := api.SetupRouter(db)
+func (f fakeTransactionUseCase) Create(_ context.Context, input handler.CreateTransactionInput) (handler.CreateTransactionOutput, error) {
+	return handler.CreateTransactionOutput{
+		ID:        "tx-1",
+		Status:    "created",
+		CreatedAt: time.Now(),
+	}, nil
+}
 
-    // Create a test user for authentication
-    user := map[string]interface{}{
-        "username": "test_user",
-        "email":    "test@example.com",
-        "password": "password123",
-        "role":     "user",
-    }
+func (f fakeTransactionUseCase) List(_ context.Context, userID string, page, pageSize int) (handler.ListTransactionsOutput, error) {
+	return handler.ListTransactionsOutput{
+		Items: []dto.TransactionResponse{
+			{ID: 1, FromUserID: 1, ToUserID: 2, Amount: 100.50, Description: "Payment", CreatedAt: time.Now().Format(time.RFC3339)},
+		},
+		Page:       page,
+		PageSize:   pageSize,
+		TotalItems: 1,
+	}, nil
+}
 
-    userBody, _ := json.Marshal(user)
-    req, _ := http.NewRequest("POST", "/api/v1/users", bytes.NewBuffer(userBody))
-    req.Header.Set("Content-Type", "application/json")
+func TestTransactionContractE2E(t *testing.T) {
+	token := issueTestToken(t)
+	router := api.NewRouter(api.Dependencies{
+		HealthHandler:      handler.NewHealthHandler(),
+		TransactionHandler: handler.NewTransactionHandler(fakeTransactionUseCase{}),
+	})
 
-    // Create user
-    resp := httptest.NewRecorder()
-    router.ServeHTTP(resp, req)
-    assert.Equal(t, http.StatusCreated, resp.Code)
+	transaction := map[string]interface{}{
+		"from_user_id": 1,
+		"to_user_id":   2,
+		"amount":       100.50,
+		"description":  "Payment for services",
+	}
 
-    // Authenticate the user
-    login := map[string]string{
-        "username": "test_user",
-        "password": "password123",
-    }
+	body, _ := json.Marshal(transaction)
+	createReq := httptest.NewRequest(http.MethodPost, "/api/v1/transactions", bytes.NewReader(body))
+	createReq.Header.Set("Authorization", "Bearer "+token)
+	createReq.Header.Set("Content-Type", "application/json")
+	createResp := httptest.NewRecorder()
+	router.ServeHTTP(createResp, createReq)
+	assert.Equal(t, http.StatusCreated, createResp.Code)
 
-    loginBody, _ := json.Marshal(login)
-    req, _ = http.NewRequest("POST", "/api/v1/login", bytes.NewBuffer(loginBody))
-    req.Header.Set("Content-Type", "application/json")
+	listReq := httptest.NewRequest(http.MethodGet, "/api/v1/transactions?page=1&page_size=20", nil)
+	listReq.Header.Set("Authorization", "Bearer "+token)
+	listResp := httptest.NewRecorder()
+	router.ServeHTTP(listResp, listReq)
+	assert.Equal(t, http.StatusOK, listResp.Code)
 
-    resp = httptest.NewRecorder()
-    router.ServeHTTP(resp, req)
-    assert.Equal(t, http.StatusOK, resp.Code)
+	var listBody map[string]interface{}
+	err := json.Unmarshal(listResp.Body.Bytes(), &listBody)
+	require.NoError(t, err)
+	_, hasItems := listBody["items"]
+	assert.True(t, hasItems)
+}
 
-    var loginResponse map[string]interface{}
-    json.Unmarshal(resp.Body.Bytes(), &loginResponse)
-    token := loginResponse["token"].(string)
-
-    // Create a transaction
-    transaction := map[string]interface{}{
-        "from_user_id": 1,
-        "to_user_id":   2,
-        "amount":       100.50,
-        "description":  "Payment for services",
-    }
-
-    transactionBody, _ := json.Marshal(transaction)
-    req, _ = http.NewRequest("POST", "/api/v1/transactions", bytes.NewBuffer(transactionBody))
-    req.Header.Set("Authorization", "Bearer "+token)
-    req.Header.Set("Content-Type", "application/json")
-
-    resp = httptest.NewRecorder()
-    router.ServeHTTP(resp, req)
-    assert.Equal(t, http.StatusCreated, resp.Code)
-
-    // Verify transaction was created
-    // Additional checks can be added here to verify the transaction in the database
+func issueTestToken(t *testing.T) string {
+	t.Helper()
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":   "user-1",
+		"roles": []string{"user"},
+		"exp":   time.Now().Add(time.Hour).Unix(),
+	})
+	signed, err := token.SignedString([]byte("dev-secret"))
+	require.NoError(t, err)
+	return signed
 }

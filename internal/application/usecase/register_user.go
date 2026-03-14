@@ -2,11 +2,13 @@ package usecase
 
 import (
 	"context"
-	"errors"
+	"strconv"
+
 	"golang.org/x/crypto/bcrypt"
-	"your_project/internal/domain/entity"
-	"your_project/internal/domain/repository"
-	"your_project/internal/application/validator"
+
+	"github.com/AbdullahOztoprak/Backend-Path/internal/application/validator"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/repository"
 )
 
 type RegisterUserInput struct {
@@ -21,7 +23,7 @@ type RegisterUserOutput struct {
 }
 
 type RegisterUserUseCase struct {
-	userRepo repository.UserRepository
+	userRepo  repository.UserRepository
 	validator *validator.UserValidator
 }
 
@@ -33,26 +35,27 @@ func NewRegisterUserUseCase(userRepo repository.UserRepository, validator *valid
 }
 
 func (uc *RegisterUserUseCase) Execute(ctx context.Context, input RegisterUserInput) (RegisterUserOutput, error) {
-	if err := uc.validator.Validate(input.Username, input.Email, input.Password); err != nil {
+	_ = ctx
+
+	if err := uc.validator.ValidateCredentials(input.Username, input.Email, input.Password); err != nil {
 		return RegisterUserOutput{}, err
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return RegisterUserOutput{}, errors.New("failed to hash password")
+		return RegisterUserOutput{}, err
 	}
 
-	user := entity.User{
+	user := &entity.User{
 		Username: input.Username,
 		Email:    input.Email,
 		Password: string(hashedPassword),
 		Role:     input.Role,
 	}
 
-	userID, err := uc.userRepo.Create(ctx, user)
-	if err != nil {
+	if err := uc.userRepo.Create(user); err != nil {
 		return RegisterUserOutput{}, err
 	}
 
-	return RegisterUserOutput{UserID: userID}, nil
+	return RegisterUserOutput{UserID: strconv.FormatInt(user.ID, 10)}, nil
 }

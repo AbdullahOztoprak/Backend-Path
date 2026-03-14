@@ -4,6 +4,8 @@ import (
 	"errors"
 	"regexp"
 	"strings"
+
+	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
 )
 
 type User struct {
@@ -11,6 +13,30 @@ type User struct {
 	Email        string
 	PasswordHash string
 	Role         string
+}
+
+type UserValidator struct{}
+
+func NewUserValidator() *UserValidator {
+	return &UserValidator{}
+}
+
+func (v *UserValidator) Validate(user *entity.User) error {
+	return ValidateUser(User{
+		Username:     user.Username,
+		Email:        user.Email,
+		PasswordHash: user.Password,
+		Role:         user.Role,
+	})
+}
+
+func (v *UserValidator) ValidateCredentials(username, email, password string) error {
+	return ValidateUser(User{
+		Username:     username,
+		Email:        email,
+		PasswordHash: password,
+		Role:         "user",
+	})
 }
 
 var (

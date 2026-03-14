@@ -29,7 +29,7 @@ func (r *TransactionRepositoryImpl) Create(ctx context.Context, transaction *ent
 	return nil
 }
 
-func (r *TransactionRepositoryImpl) GetByID(ctx context.Context, id int64) (*entity.Transaction, error) {
+func (r *TransactionRepositoryImpl) GetByID(ctx context.Context, id string) (*entity.Transaction, error) {
 	query := `SELECT id, from_user_id, to_user_id, amount, description, created_at, updated_at 
 			  FROM transactions WHERE id = $1`
 	
@@ -44,7 +44,7 @@ func (r *TransactionRepositoryImpl) GetByID(ctx context.Context, id int64) (*ent
 	return &transaction, nil
 }
 
-func (r *TransactionRepositoryImpl) ListByUserID(ctx context.Context, userID int64) ([]entity.Transaction, error) {
+func (r *TransactionRepositoryImpl) ListByUserID(ctx context.Context, userID string) ([]entity.Transaction, error) {
 	query := `SELECT id, from_user_id, to_user_id, amount, description, created_at, updated_at 
 			  FROM transactions WHERE from_user_id = $1 OR to_user_id = $1 ORDER BY created_at DESC`
 	
@@ -72,9 +72,14 @@ func (r *TransactionRepositoryImpl) Update(ctx context.Context, transaction *ent
 	return err
 }
 
-func (r *TransactionRepositoryImpl) Delete(ctx context.Context, id int64) error {
+func (r *TransactionRepositoryImpl) Delete(ctx context.Context, id string) error {
 	query := `DELETE FROM transactions WHERE id = $1`
 	
 	_, err := r.db.ExecContext(ctx, query, id)
 	return err
+}
+
+// NewTransactionRepo keeps backward compatibility with older test call sites.
+func NewTransactionRepo(db *sql.DB) repository.TransactionRepository {
+	return NewTransactionRepository(db)
 }

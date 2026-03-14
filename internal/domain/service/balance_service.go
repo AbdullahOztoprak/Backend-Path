@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 	"errors"
+
 	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
 	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/repository"
-	"github.com/AbdullahOztoprak/Backend-Path/pkg/apperror"
 )
 
 type BalanceService struct {
@@ -17,9 +17,10 @@ func NewBalanceService(balanceRepo repository.BalanceRepository) *BalanceService
 }
 
 func (s *BalanceService) GetBalance(ctx context.Context, userID int) (*entity.Balance, error) {
-	balance, err := s.balanceRepo.FindByUserID(ctx, userID)
+	_ = ctx
+	balance, err := s.balanceRepo.GetBalance(userID)
 	if err != nil {
-		return nil, apperror.NewNotFoundError("balance not found")
+		return nil, err
 	}
 	return balance, nil
 }
@@ -29,13 +30,14 @@ func (s *BalanceService) UpdateBalance(ctx context.Context, userID int, amount f
 		return errors.New("amount cannot be negative")
 	}
 
-	balance, err := s.balanceRepo.FindByUserID(ctx, userID)
+	_ = ctx
+	balance, err := s.balanceRepo.GetBalance(userID)
 	if err != nil {
-		return apperror.NewNotFoundError("balance not found")
+		return err
 	}
 
 	balance.Amount += amount
-	if err := s.balanceRepo.Update(ctx, balance); err != nil {
+	if err := s.balanceRepo.UpdateBalance(balance); err != nil {
 		return err
 	}
 	return nil
@@ -46,27 +48,28 @@ func (s *BalanceService) TransferFunds(ctx context.Context, fromUserID, toUserID
 		return errors.New("transfer amount must be positive")
 	}
 
-	fromBalance, err := s.balanceRepo.FindByUserID(ctx, fromUserID)
+	_ = ctx
+	fromBalance, err := s.balanceRepo.GetBalance(fromUserID)
 	if err != nil {
-		return apperror.NewNotFoundError("from user balance not found")
+		return err
 	}
 
 	if fromBalance.Amount < amount {
 		return errors.New("insufficient funds")
 	}
 
-	toBalance, err := s.balanceRepo.FindByUserID(ctx, toUserID)
+	toBalance, err := s.balanceRepo.GetBalance(toUserID)
 	if err != nil {
-		return apperror.NewNotFoundError("to user balance not found")
+		return err
 	}
 
 	fromBalance.Amount -= amount
 	toBalance.Amount += amount
 
-	if err := s.balanceRepo.Update(ctx, fromBalance); err != nil {
+	if err := s.balanceRepo.UpdateBalance(fromBalance); err != nil {
 		return err
 	}
-	if err := s.balanceRepo.Update(ctx, toBalance); err != nil {
+	if err := s.balanceRepo.UpdateBalance(toBalance); err != nil {
 		return err
 	}
 	return nil

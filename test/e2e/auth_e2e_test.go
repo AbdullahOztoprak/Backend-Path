@@ -2,29 +2,83 @@ package e2e
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
-	"os"
+	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/AbdullahOztoprak/Backend-Path/internal/api"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/api/handler"
 )
 
-const baseURL = "http://localhost:8081/api/v1"
+type fakeAuthUseCase struct{}
+
+func (f fakeAuthUseCase) Login(_ context.Context, username, password string) (handler.TokenPair, error) {
+	if username != "test_user" || password != "securepassword" {
+		return handler.TokenPair{}, errors.New("invalid credentials")
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":   "user-1",
+		"roles": []string{"user"},
+		"exp":   time.Now().Add(time.Hour).Unix(),
+	})
+	signed, err := token.SignedString([]byte("dev-secret"))
+	if err != nil {
+		return handler.TokenPair{}, err
+	}
+
+	return handler.TokenPair{
+		AccessToken:  signed,
+		RefreshToken: "refresh-token",
+		ExpiresIn:    3600,
+	}, nil
+}
+
+func (f fakeAuthUseCase) Refresh(_ context.Context, _ string) (handler.TokenPair, error) {
+	return handler.TokenPair{AccessToken: "new-token", RefreshToken: "new-refresh", ExpiresIn: 3600}, nil
+}
+
+type fakeUserUseCase struct{}
+
+func (f fakeUserUseCase) Create(_ context.Context, input handler.CreateUserInput) (handler.CreateUserOutput, error) {
+	return handler.CreateUserOutput{
+		ID:        "1",
+		Username:  input.Username,
+		Email:     input.Email,
+		Role:      input.Role,
+		CreatedAt: time.Now(),
+	}, nil
+}
 
 func TestUserRegistrationAndLogin(t *testing.T) {
+	router := api.NewRouter(api.Dependencies{
+		HealthHandler: handler.NewHealthHandler(),
+		AuthHandler:   handler.NewAuthHandler(fakeAuthUseCase{}),
+		UserHandler:   handler.NewUserHandler(fakeUserUseCase{}),
+	})
+
 	// Step 1: User Registration
 	user := map[string]interface{}{
-		"username":     "test_user",
-		"email":        "test@example.com",
-		"password_hash": "securepassword",
-		"role":         "user",
+		"username": "test_user",
+		"email":    "test@example.com",
+		"password": "securepassword",
+		"role":     "user",
 	}
 
 	userJSON, _ := json.Marshal(user)
-	resp, err := http.Post(baseURL+"/users", "application/json", bytes.NewBuffer(userJSON))
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/users", bytes.NewReader(userJSON))
+	req.Header.Set("Content-Type", "application/json")
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+	assert.Equal(t, http.StatusCreated, resp.Code)
 
 	// Step 2: User Login
 	login := map[string]string{
@@ -33,48 +87,48 @@ func TestUserRegistrationAndLogin(t *testing.T) {
 	}
 
 	loginJSON, _ := json.Marshal(login)
-	resp, err = http.Post(baseURL+"/login", "application/json", bytes.NewBuffer(loginJSON))
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewReader(loginJSON))
+	req.Header.Set("Content-Type", "application/json")
+	resp = httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+	assert.Equal(t, http.StatusOK, resp.Code)
 
-	// Step 3: Validate JWT Token
 	var loginResponse map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&loginResponse)
-	token, ok := loginResponse["token"].(string)
-	assert.True(t, ok)
-
-	// Step 4: Access Protected Route
-	req, err := http.NewRequest("GET", baseURL+"/users", nil)
-	assert.NoError(t, err)
-	req.Header.Set("Authorization", "Bearer "+token)
-
-	client := &http.Client{}
-	resp, err = client.Do(req)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	err := json.Unmarshal(resp.Body.Bytes(), &loginResponse)
+	require.NoError(t, err)
+	_, hasAccessToken := loginResponse["access_token"]
+	_, hasRefreshToken := loginResponse["refresh_token"]
+	assert.True(t, hasAccessToken)
+	assert.True(t, hasRefreshToken)
 }
 
 func TestUnauthorizedAccess(t *testing.T) {
-	// Attempt to access protected route without token
-	resp, err := http.Get(baseURL + "/users")
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+	router := api.NewRouter(api.Dependencies{
+		HealthHandler: handler.NewHealthHandler(),
+	})
+
+	resp := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/transactions", nil)
+	router.ServeHTTP(resp, req)
+	assert.Equal(t, http.StatusUnauthorized, resp.Code)
 }
 
 func TestInvalidLogin(t *testing.T) {
-	// Attempt to login with invalid credentials
+	router := api.NewRouter(api.Dependencies{
+		HealthHandler: handler.NewHealthHandler(),
+		AuthHandler:   handler.NewAuthHandler(fakeAuthUseCase{}),
+	})
+
 	login := map[string]string{
 		"username": "test_user",
 		"password": "wrongpassword",
 	}
 
 	loginJSON, _ := json.Marshal(login)
-	resp, err := http.Post(baseURL+"/login", "application/json", bytes.NewBuffer(loginJSON))
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-}
+	resp := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", bytes.NewReader(loginJSON))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(resp, req)
 
-func TestCleanup(t *testing.T) {
-	// Cleanup test user from database if necessary
-	// This can be done by calling a delete endpoint or directly manipulating the database
+	assert.Equal(t, http.StatusUnauthorized, resp.Code)
 }

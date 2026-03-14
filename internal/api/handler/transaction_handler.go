@@ -1,47 +1,116 @@
 package handler
 
 import (
-    "net/http"
-    "github.com/gin-gonic/gin"
-    "github.com/AbdullahOztoprak/Backend-Path/internal/application/usecase"
-    "github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
-    "github.com/AbdullahOztoprak/Backend-Path/pkg/apperror"
+	"context"
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/AbdullahOztoprak/Backend-Path/internal/api/dto"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/api/middleware"
 )
 
+type CreateTransactionInput struct {
+	FromUserID  int
+	ToUserID    int
+	Amount      float64
+	Description string
+}
+
+type CreateTransactionOutput struct {
+	ID        string
+	Status    string
+	CreatedAt time.Time
+}
+
+type ListTransactionsOutput struct {
+	Items      []dto.TransactionResponse `json:"items"`
+	Page       int                       `json:"page"`
+	PageSize   int                       `json:"page_size"`
+	TotalItems int                       `json:"total_items"`
+}
+
+type TransactionUseCase interface {
+	Create(ctx context.Context, input CreateTransactionInput) (CreateTransactionOutput, error)
+	List(ctx context.Context, userID string, page, pageSize int) (ListTransactionsOutput, error)
+}
+
 type TransactionHandler struct {
-    transferFundsUseCase usecase.TransferFunds
-    listTransactionsUseCase usecase.ListTransactions
+	transactionUseCase TransactionUseCase
 }
 
-func NewTransactionHandler(transferFundsUseCase usecase.TransferFunds, listTransactionsUseCase usecase.ListTransactions) *TransactionHandler {
-    return &TransactionHandler{
-        transferFundsUseCase: transferFundsUseCase,
-        listTransactionsUseCase: listTransactionsUseCase,
-    }
+func NewTransactionHandler(transactionUseCase TransactionUseCase) *TransactionHandler {
+	return &TransactionHandler{transactionUseCase: transactionUseCase}
 }
 
-func (h *TransactionHandler) TransferFunds(c *gin.Context) {
-    var request entity.Transaction
-    if err := c.ShouldBindJSON(&request); err != nil {
-        c.JSON(http.StatusBadRequest, apperror.NewBadRequestError("Invalid request payload"))
-        return
-    }
+// TransferFunds creates a transaction.
+func (h *TransactionHandler) TransferFunds(w http.ResponseWriter, r *http.Request) {
+	if h.transactionUseCase == nil {
+		writeError(w, http.StatusServiceUnavailable, "transaction service not configured")
+		return
+	}
 
-    err := h.transferFundsUseCase.Execute(request)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, apperror.NewInternalServerError("Failed to transfer funds"))
-        return
-    }
+	var req dto.FundTransferRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request payload")
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{"message": "Funds transferred successfully"})
+	out, err := h.transactionUseCase.Create(r.Context(), CreateTransactionInput{
+		FromUserID:  req.FromUserID,
+		ToUserID:    req.ToUserID,
+		Amount:      req.Amount,
+		Description: req.Description,
+	})
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"id":         out.ID,
+		"status":     out.Status,
+		"created_at": out.CreatedAt,
+	})
 }
 
-func (h *TransactionHandler) ListTransactions(c *gin.Context) {
-    transactions, err := h.listTransactionsUseCase.Execute()
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, apperror.NewInternalServerError("Failed to retrieve transactions"))
-        return
-    }
+// ListTransactions returns transactions for authenticated user.
+func (h *TransactionHandler) ListTransactions(w http.ResponseWriter, r *http.Request) {
+	if h.transactionUseCase == nil {
+		writeError(w, http.StatusServiceUnavailable, "transaction service not configured")
+		return
+	}
 
-    c.JSON(http.StatusOK, transactions)
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok || userID == "" {
+		writeError(w, http.StatusUnauthorized, "missing authenticated user")
+		return
+	}
+
+	page, pageSize := parsePagination(r)
+	out, err := h.transactionUseCase.List(r.Context(), userID, page, pageSize)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, out)
+}
+
+func parsePagination(r *http.Request) (int, int) {
+	page := 1
+	pageSize := 20
+
+	if raw := r.URL.Query().Get("page"); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil && v > 0 {
+			page = v
+		}
+	}
+	if raw := r.URL.Query().Get("page_size"); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil && v > 0 {
+			pageSize = v
+		}
+	}
+
+	return page, pageSize
 }

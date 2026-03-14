@@ -2,12 +2,10 @@ package service
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
 	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/repository"
-	"github.com/AbdullahOztoprak/Backend-Path/pkg/apperror"
 )
 
 type TransactionService struct {
@@ -19,8 +17,8 @@ func NewTransactionService(repo repository.TransactionRepository) *TransactionSe
 }
 
 func (s *TransactionService) CreateTransaction(ctx context.Context, transaction *entity.Transaction) error {
-	if err := transaction.Validate(); err != nil {
-		return apperror.NewValidationError("Invalid transaction data", err)
+	if transaction.Amount <= 0 {
+		return entity.ErrInvalidTransactionAmount
 	}
 
 	transaction.CreatedAt = time.Now()
@@ -30,18 +28,12 @@ func (s *TransactionService) CreateTransaction(ctx context.Context, transaction 
 }
 
 func (s *TransactionService) GetTransactionByID(ctx context.Context, id string) (*entity.Transaction, error) {
-	transaction, err := s.repo.FindByID(ctx, id)
-	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
-			return nil, apperror.NewNotFoundError("Transaction not found")
-		}
-		return nil, err
-	}
-	return transaction, nil
+	return s.repo.GetByID(ctx, id)
 }
 
 func (s *TransactionService) ListTransactions(ctx context.Context, userID string, limit, offset int) ([]entity.Transaction, error) {
-	transactions, err := s.repo.FindByUserID(ctx, userID, limit, offset)
+	_, _ = limit, offset
+	transactions, err := s.repo.ListByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -49,8 +41,8 @@ func (s *TransactionService) ListTransactions(ctx context.Context, userID string
 }
 
 func (s *TransactionService) UpdateTransaction(ctx context.Context, transaction *entity.Transaction) error {
-	if err := transaction.Validate(); err != nil {
-		return apperror.NewValidationError("Invalid transaction data", err)
+	if transaction.Amount <= 0 {
+		return entity.ErrInvalidTransactionAmount
 	}
 
 	transaction.UpdatedAt = time.Now()

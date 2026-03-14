@@ -1,8 +1,8 @@
 package observability
 
 import (
+    "encoding/json"
     "net/http"
-    "github.com/gin-gonic/gin"
 )
 
 type HealthCheckResponse struct {
@@ -10,9 +10,11 @@ type HealthCheckResponse struct {
 }
 
 // HealthCheck handles health check requests
-func HealthCheck(c *gin.Context) {
+func HealthCheck(w http.ResponseWriter, _ *http.Request) {
     response := HealthCheckResponse{
         Status: "healthy",
     }
-    c.JSON(http.StatusOK, response)
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    _ = json.NewEncoder(w).Encode(response)
 }

@@ -2,14 +2,15 @@ package validator
 
 import (
 	"errors"
-	"regexp"
+	"strings"
+
 	"github.com/AbdullahOztoprak/Backend-Path/internal/domain/entity"
 )
 
 var (
 	errInvalidTransactionAmount = errors.New("transaction amount must be greater than zero")
 	errInvalidTransactionDescription = errors.New("transaction description cannot be empty")
-	errInvalidUserID = errors.New("user ID must be a valid positive integer")
+	errInvalidUserID = errors.New("user ID is required")
 )
 
 // TransactionValidator validates transaction data.
@@ -35,6 +36,6 @@ func (v *TransactionValidator) Validate(transaction *entity.Transaction) error {
 }
 
 // isValidUserID checks if the user ID is a valid positive integer.
-func isValidUserID(userID int) bool {
-	return userID > 0
+func isValidUserID(userID string) bool {
+	return strings.TrimSpace(userID) != ""
 }
