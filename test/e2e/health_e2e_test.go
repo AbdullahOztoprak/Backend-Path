@@ -2,22 +2,23 @@ package e2e
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/AbdullahOztoprak/Backend-Path/internal/api"
+	"github.com/AbdullahOztoprak/Backend-Path/internal/api/handler"
 )
 
 func TestHealthCheck(t *testing.T) {
-	client := &http.Client{
-		Timeout: 5 * time.Second,
-	}
+	router := api.NewRouter(api.Dependencies{
+		HealthHandler: handler.NewHealthHandler(),
+	})
 
-	resp, err := client.Get("http://localhost:8081/api/v1/health")
-	if err != nil {
-		t.Fatalf("Failed to make health check request: %v", err)
-	}
-	defer resp.Body.Close()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/health", nil)
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "Expected status code 200 OK")
+	assert.Equal(t, http.StatusOK, resp.Code, "Expected status code 200 OK")
 }
