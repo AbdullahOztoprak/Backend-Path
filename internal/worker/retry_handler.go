@@ -1,3 +1,6 @@
+//go:build worker
+// +build worker
+
 package worker
 
 import (
