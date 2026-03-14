@@ -1,67 +1,77 @@
 package handler
 
 import (
+	"context"
 	"net/http"
-	"github.com/gin-gonic/gin"
-	"github.com/AbdullahOztoprak/Backend-Path/internal/application/usecase"
-	"github.com/AbdullahOztoprak/Backend-Path/internal/infrastructure/auth"
+
 	"github.com/AbdullahOztoprak/Backend-Path/internal/api/dto"
 )
 
+type TokenPair struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int64  `json:"expires_in"`
+}
+
+type AuthUseCase interface {
+	Login(ctx context.Context, username, password string) (TokenPair, error)
+	Refresh(ctx context.Context, refreshToken string) (TokenPair, error)
+}
+
 type AuthHandler struct {
-	authService usecase.AuthService
+	authUseCase AuthUseCase
 }
 
-func NewAuthHandler(authService usecase.AuthService) *AuthHandler {
-	return &AuthHandler{authService: authService}
+func NewAuthHandler(authUseCase AuthUseCase) *AuthHandler {
+	return &AuthHandler{authUseCase: authUseCase}
 }
 
-// RegisterUser handles user registration
-func (h *AuthHandler) RegisterUser(c *gin.Context) {
-	var req dto.RegisterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+// LoginUser handles user login.
+func (h *AuthHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
+	if h.authUseCase == nil {
+		writeError(w, http.StatusServiceUnavailable, "auth service not configured")
 		return
 	}
 
-	if err := h.authService.RegisterUser(req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	var req dto.UserLoginRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid input")
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
-}
-
-// LoginUser handles user login
-func (h *AuthHandler) LoginUser(c *gin.Context) {
-	var req dto.LoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-		return
-	}
-
-	token, err := h.authService.LoginUser(req)
+	tokens, err := h.authUseCase.Login(r.Context(), req.Username, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		writeError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	writeJSON(w, http.StatusOK, tokens)
 }
 
-// RefreshToken handles token refresh
-func (h *AuthHandler) RefreshToken(c *gin.Context) {
-	var req dto.RefreshTokenRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+// RefreshToken rotates and returns a new token pair.
+func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
+	if h.authUseCase == nil {
+		writeError(w, http.StatusServiceUnavailable, "auth service not configured")
 		return
 	}
 
-	newToken, err := h.authService.RefreshToken(req)
+	var req struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid input")
+		return
+	}
+	if req.RefreshToken == "" {
+		writeError(w, http.StatusBadRequest, "refresh_token is required")
+		return
+	}
+
+	tokens, err := h.authUseCase.Refresh(r.Context(), req.RefreshToken)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		writeError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": newToken})
+	writeJSON(w, http.StatusOK, tokens)
 }
