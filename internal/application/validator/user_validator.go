@@ -11,7 +11,7 @@ import (
 type User struct {
 	Username     string
 	Email        string
-	PasswordHash string
+	Password     string
 	Role         string
 }
 
@@ -25,7 +25,7 @@ func (v *UserValidator) Validate(user *entity.User) error {
 	return ValidateUser(User{
 		Username:     user.Username,
 		Email:        user.Email,
-		PasswordHash: user.Password,
+		Password:     user.Password,
 		Role:         user.Role,
 	})
 }
@@ -34,7 +34,7 @@ func (v *UserValidator) ValidateCredentials(username, email, password string) er
 	return ValidateUser(User{
 		Username:     username,
 		Email:        email,
-		PasswordHash: password,
+		Password:     password,
 		Role:         "user",
 	})
 }
@@ -42,7 +42,7 @@ func (v *UserValidator) ValidateCredentials(username, email, password string) er
 var (
 	ErrInvalidUsername     = errors.New("invalid username")
 	ErrInvalidEmail        = errors.New("invalid email")
-	ErrInvalidPasswordHash = errors.New("invalid password hash")
+	ErrInvalidPassword     = errors.New("invalid password")
 	ErrInvalidRole         = errors.New("invalid role")
 )
 
@@ -53,7 +53,7 @@ func ValidateUser(user User) error {
 	if err := validateEmail(user.Email); err != nil {
 		return err
 	}
-	if err := validatePasswordHash(user.PasswordHash); err != nil {
+	if err := validatePassword(user.Password); err != nil {
 		return err
 	}
 	if err := validateRole(user.Role); err != nil {
@@ -79,9 +79,9 @@ func validateEmail(email string) error {
 	return nil
 }
 
-func validatePasswordHash(passwordHash string) error {
-	if len(passwordHash) == 0 {
-		return ErrInvalidPasswordHash
+func validatePassword(password string) error {
+	if len(password) == 0 {
+		return ErrInvalidPassword
 	}
 	return nil
 }

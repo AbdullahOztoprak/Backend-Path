@@ -2,7 +2,9 @@ package observability
 
 import (
     "context"
+    "io"
     "log"
+    "time"
 
     "github.com/opentracing/opentracing-go"
     "github.com/opentracing/opentracing-go/ext"
@@ -11,6 +13,7 @@ import (
 
 type Tracer struct {
     tracer opentracing.Tracer
+    closer io.Closer
 }
 
 func NewTracer(serviceName string) *Tracer {
@@ -22,7 +25,7 @@ func NewTracer(serviceName string) *Tracer {
         },
         Reporter: &config.ReporterConfig{
             LogSpans:            true,
-            BufferFlushInterval: 1,
+            BufferFlushInterval: time.Second,
         },
     }
 
@@ -30,10 +33,9 @@ func NewTracer(serviceName string) *Tracer {
     if err != nil {
         log.Fatalf("could not initialize jaeger tracer: %v", err)
     }
-    _ = closer
     opentracing.SetGlobalTracer(tracer)
 
-    return &Tracer{tracer: tracer}
+    return &Tracer{tracer: tracer, closer: closer}
 }
 
 func (t *Tracer) StartSpan(operationName string, ctx context.Context) opentracing.Span {
@@ -47,4 +49,11 @@ func (t *Tracer) FinishSpan(span opentracing.Span, err error) {
         span.SetTag("error.message", err.Error())
     }
     span.Finish()
+}
+
+func (t *Tracer) Close() error {
+    if t == nil || t.closer == nil {
+        return nil
+    }
+    return t.closer.Close()
 }

@@ -14,34 +14,39 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version: '1.23'
+          cache: true
 
-      - name: Install dependencies
-        run: go mod tidy
+      - name: Verify dependencies
+        run: go mod download
+
+      - name: Verify module files are tidy
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
 
       - name: Run tests
         run: go test ./... -v
 
       - name: Build the application
-        run: go build -o go-backend-project ./cmd/main.go
+        run: go build ./...
 
-      - name: Install golangci-lint
+      - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: latest
+          version: v1.60.3
 
-      - name: Upload coverage report
+      - name: Generate coverage report
         run: go test -coverprofile=coverage.out ./...
-        continue-on-error: true
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v5
         with:
           file: coverage.out
           flags: unittests
-          name: codecov-umbrella
+          name: backend-path

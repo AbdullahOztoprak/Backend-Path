@@ -35,7 +35,7 @@ func (v *TransactionValidator) Validate(transaction *entity.Transaction) error {
 	return nil
 }
 
-// isValidUserID checks if the user ID is a valid positive integer.
+// isValidUserID checks that the user ID is present.
 func isValidUserID(userID string) bool {
 	return strings.TrimSpace(userID) != ""
 }
