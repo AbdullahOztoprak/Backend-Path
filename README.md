@@ -24,6 +24,7 @@ A production-grade Go backend API for fintech-style money transfers. Built with 
 
 ## Features
 
+
 - **JWT Authentication** — access token + refresh token
 - **Role-Based Access Control** — `admin` and `user` roles
 - **Transaction Hardening** — `SERIALIZABLE` isolation, `SELECT FOR UPDATE`, deadlock-safe ordering, idempotency keys
