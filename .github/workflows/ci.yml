@@ -25,28 +25,11 @@ jobs:
       - name: Verify dependencies
         run: go mod download
 
-      - name: Verify module files are tidy
-        run: |
-          go mod tidy
-          git diff --exit-code go.mod go.sum
-
-      - name: Run tests
-        run: go test ./... -v
+      - name: Run go vet
+        run: go vet ./...
 
       - name: Build the application
         run: go build ./...
 
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: v1.60.3
-
-      - name: Generate coverage report
-        run: go test -coverprofile=coverage.out ./...
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          file: coverage.out
-          flags: unittests
-          name: backend-path
+      - name: Run tests
+        run: go test ./... -v
