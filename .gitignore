@@ -30,6 +30,3 @@ vendor/
 
 # Coverage files
 coverage.out
-
-# Dependency directories
-go.sum

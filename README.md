@@ -1,339 +1,141 @@
 # Backend-Path
 
-A production-grade Go backend API for fintech-style money transfers. Built with clean architecture, JWT authentication, PostgreSQL transaction hardening, Redis rate limiting, Prometheus metrics, and full CI/CD via GitHub Actions.
+[![CI](https://github.com/AbdullahOztoprak/Backend-Path/actions/workflows/ci.yml/badge.svg)](https://github.com/AbdullahOztoprak/Backend-Path/actions/workflows/ci.yml)
 
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Language | Go 1.23 |
-| Router | gorilla/mux |
-| Database | PostgreSQL 15 (pgx/v4) |
-| Cache / Rate Limit | Redis (go-redis/v8) |
-| Auth | JWT (dgrijalva/jwt-go) |
-| Logging | logrus |
-| Config | YAML + env |
-| Metrics | Prometheus + Grafana |
-| Containerization | Docker + Docker Compose |
-| CI/CD | GitHub Actions |
-| Testing | testify, testcontainers |
-
----
-
-## Features
-
-
-- **JWT Authentication** — access token + refresh token
-- **Role-Based Access Control** — `admin` and `user` roles
-- **Transaction Hardening** — `SERIALIZABLE` isolation, `SELECT FOR UPDATE`, deadlock-safe ordering, idempotency keys
-- **Balance Management** — thread-safe balance reads and updates
-- **Rate Limiting** — per-IP request throttling via Redis
-- **CORS Middleware** — configurable allowed origins
-- **Structured Logging** — request ID and correlation ID on every log line
-- **Prometheus Metrics** — `/metrics` endpoint with request counters and latency histograms
-- **Health Checks** — `/api/v1/health` liveness probe
-- **Graceful Shutdown** — context-aware server shutdown
-- **Background Workers** — async transaction processing with retry and dead-letter queue
-- **Migrations** — versioned SQL migrations via shell script
-- **Full Test Suite** — unit, integration (testcontainers), E2E, and load tests (k6)
-
----
-
-## Project Structure
-
-```
-Backend-Path/
-├── cmd/
-│   └── main.go                        # Entry point, wiring, graceful shutdown
-├── configs/
-│   ├── config.go                      # Config struct loader
-│   ├── config.yaml                    # Default config
-│   └── config.production.yaml        # Production overrides
-├── internal/
-│   ├── api/
-│   │   ├── router.go                  # Route registration
-│   │   ├── handler/                   # HTTP handlers
-│   │   ├── middleware/                # Auth, CORS, logging, rate limiter, RBAC
-│   │   └── dto/                       # Request / response types
-│   ├── domain/
-│   │   ├── entity/                    # Core domain models
-│   │   ├── repository/                # Repository interfaces
-│   │   └── service/                   # Domain service interfaces
-│   ├── application/
-│   │   ├── usecase/                   # Business logic (register, login, transfer, ...)
-│   │   └── validator/                 # Input validation rules
-│   ├── infrastructure/
-│   │   ├── persistence/postgres/      # PostgreSQL repository implementations
-│   │   ├── persistence/redis/         # Redis token store and rate limiter
-│   │   ├── auth/                      # JWT provider, bcrypt hasher, RBAC policy
-*** Begin Patch
-*** Add File: /Users/abdullah/Github2Backendpath/Backend-Path/README.md
-#+ Backend-Path
-
-Backend-Path is a production-oriented Go backend that demonstrates secure user management, balance handling, and transactional transfer workflows using a layered architecture, robust middleware stack, and observability tooling.
+Secure, layered Go backend for authentication, balances, and transfer workflows with production-minded engineering practices.
 
 ## Why This Project Matters
-Backend-Path focuses on engineering concerns that matter in production systems: secure authentication, transactional integrity for transfers, idempotent operations, resilient background processing, and actionable observability. It's intended as a portfolio-quality reference for backend engineers and hiring teams.
+Backend-Path demonstrates practical backend concerns that matter in real systems: clear architectural boundaries, secure middleware, transactional data access patterns, and CI reliability.
 
 ## Current Status
-- Transport refactor complete: canonical `gorilla/mux` + `net/http` stack.
-- Transport, middleware, and JSON helpers standardized across handlers.
-- E2E tests updated to match the canonical API contract.
-- DI wiring in `cmd/main.go` is scaffolded; production dependency bootstrapping is being finalized.
+Active development with core API and architecture in place.
 
 ## Implemented
-- Layered architecture (transport → use cases → domain → infra).
-- Authentication (JWT), RBAC middleware, structured request logging, and request tracing.
-- Transactional transfer flows with idempotency support and DB migrations.
-- Prometheus metrics and health/readiness endpoints.
-- Background worker scaffolding for retries and dead-letter handling.
-- Test fixtures and E2E tests under `test/`.
+- Layered structure under `internal/api`, `internal/application`, `internal/domain`, and `internal/infrastructure`.
+- HTTP routing standardized on `gorilla/mux` + `net/http`.
+- Middleware chain including request ID, logging, recovery, CORS, auth, RBAC, and rate limiting.
+- Use cases for registration, login, refresh token, transfer, transaction listing, and balance retrieval.
+- PostgreSQL and Redis infrastructure adapters.
+- Worker modules for retry/dead-letter style background processing.
+- Metrics and health-related observability components.
+- CI workflow for dependency resolution, vet, build, and tests.
 
 ## In Progress
-- Complete DI wiring to inject repository adapters and services into `cmd/main.go`.
-- Harden CI: linting, caching, and pinned action versions.
-- Add full integration tests that run against ephemeral DB/redis in CI.
+- Completing production dependency wiring in `cmd/main.go`.
+- Expanding integration coverage and deployment hardening.
 
 ## Planned
-- Production deployment manifests and k8s validation (Helm/manifest tests).
-- Performance tuning, benchmarking, and load testing for transfer throughput.
-- Enhanced observability dashboards and SLO-driven alerts.
+- Deeper performance/load validation.
+- Additional deployment safety checks and operational hardening.
 
 ## Key Features
-- Secure JWT-based authentication and role-based access control.
-- Transactional transfers with idempotency and retry-safety.
-- Consistent JSON API and centralized error model.
-- Request-level correlation (`request_id`) and structured logs.
-- Rate limiting, recovery, and observability (metrics + health checks).
+- JWT-based auth and refresh flow.
+- Protected routes with auth/RBAC middleware.
+- Transfer and balance APIs organized by use-case boundaries.
+- Request-level reliability middleware and observability hooks.
 
 ## Architecture Overview
-Backend-Path follows a clean, layered architecture: transport (router + middleware) handles HTTP concerns and validation; handlers map requests to application use cases; use cases contain orchestration and business rules; domain models express core invariants; infrastructure implements persistence, messaging, and observability. Background workers process deferred and retryable tasks outside user transactions.
+Backend-Path follows a layered architecture with explicit dependency direction: transport calls use cases, use cases depend on domain contracts, and infrastructure provides concrete adapters.
 
 ![Architecture Diagram](docs/assets/architecture-diagram.png)
 
 ## Request Flow
-1. The router receives an HTTP request on `/api/v1/*` and assigns a `request_id`.
-2. Middleware applies tracing, structured logging, authentication, RBAC, and rate limiting.
-3. The handler decodes input, validates it, and calls an application use case.
-4. The use case coordinates domain rules and repository operations (within DB transactions when required).
-5. Results are returned via consistent JSON responses; long-running work is pushed to the worker system when appropriate.
+Incoming requests pass through middleware before handlers execute. Handlers then delegate to application use cases, which coordinate domain contracts and infrastructure repositories.
 
-![Request Flow](docs/assets/request-flow-diagram.png)
+![Request Flow Diagram](docs/assets/request-flow-diagram.png)
 
 ## Tech Stack
-- Language: Go (modules)
-- HTTP router: `github.com/gorilla/mux` + `net/http`
-- Database: PostgreSQL (pgx/sql drivers)
-- Cache/queue: Redis (optional)
-- Auth: JWT
-- Observability: Prometheus + structured logging
-- Containers: Docker, `docker-compose` for local stacks
-- CI: GitHub Actions
+- Go modules
+- `net/http` + `github.com/gorilla/mux`
+- PostgreSQL (`lib/pq` currently in persistence setup)
+- Redis (`go-redis/v8`)
+- JWT (`dgrijalva/jwt-go`, migration to `golang-jwt` planned)
+- Prometheus client libraries
+- GitHub Actions CI
 
 ## Project Structure
-- `cmd/` — application entrypoint(s) (`cmd/main.go`)
-- `internal/api/` — router, handlers, middleware
-- `internal/application/` — use cases and validators
-- `internal/domain/` — entities and business rules
-- `internal/infrastructure/` — persistence, auth adapters, messaging, observability
-- `internal/db/` — migrations and schema
-- `internal/worker/` — background jobs and retry handlers
-- `pkg/` — shared utilities (`apperror`, `idempotency`, `pagination`)
-- `test/` — unit, integration, and e2e tests and fixtures
+```text
+Backend-Path/
+  cmd/
+  configs/
+  internal/
+    api/
+    application/
+    domain/
+    infrastructure/
+    worker/
+  pkg/
+  test/
+  docs/
+  deployments/
+```
 
 ## Quick Start
-Prerequisites: Go 1.20+, PostgreSQL, optional Redis.
-
-1. Copy and edit configuration:
-
 ```bash
-cp configs/config.yaml.example configs/config.yaml
-# or use .env for local env vars
-```
-
-2. Run migrations:
-
-```bash
-./scripts/migrate.sh up
-```
-
-3. Build and run:
-
-```bash
-go build -o bin/backend ./cmd
-./bin/backend --config configs/config.yaml
-```
-
-Or with Docker Compose for a local stack:
-
-```bash
-docker-compose -f deployments/docker-compose.yml up --build
+go mod download
+go build ./...
+./scripts/migrate.sh
 ```
 
 ## Local Development
-- Use `configs/config.yaml` or environment variables for secrets and DB URLs.
-- Focus on small, testable changes: handlers should delegate to use cases; use cases encapsulate business logic.
-- Useful files: `cmd/main.go`, `internal/api/router.go`, `internal/application/usecase/*`.
+```bash
+go test ./... -v
+go run ./cmd
+```
 
 ## Testing
-- Unit tests:
-
 ```bash
 go test ./... -v
 ```
 
-- Integration/E2E:
-
-```bash
-./scripts/run_tests.sh
-```
-
-- Benchmarks:
-
-```bash
-go test ./... -bench=. -benchmem
-```
-
-Notes: `test/` includes fixtures and example E2E flows. Integration tests expect a running DB and optional Redis (use the provided `docker-compose` for reproducible local runs).
+Additional suites are organized under `test/unit`, `test/integration`, `test/e2e`, and `test/load`.
 
 ## Observability
-- Metrics endpoint: `/metrics` for Prometheus scraping.
-- Health: `/healthz`; readiness: `/readyz`.
-- Logs: structured JSON including `request_id` and trace fields.
-- Dashboards and alerting rules are under `monitoring/` and `monitoring/alerting`.
+- Prometheus metrics middleware and handler in `internal/infrastructure/observability`.
+- Health endpoint route: `GET /api/v1/health`.
+- Logging and request correlation middleware under `internal/api/middleware`.
 
 ## API Notes
-- Base path: `/api/v1`
-- Auth: Bearer JWT. Middleware injects user context into requests.
-- Idempotency: Transfer endpoints accept `Idempotency-Key` headers.
-- Error format: `{ "code": "...", "message": "...", "request_id": "..." }`.
+API base path: `/api/v1`
 
-Example transfer request:
-
-```bash
-curl -X POST http://localhost:8080/api/v1/transfers \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Idempotency-Key: <uuid>" \
-  -H "Content-Type: application/json" \
-  -d '{"from_user_id":"...","to_user_id":"...","amount":100.00}'
-```
+Currently wired routes include:
+- `GET /health`
+- `POST /auth/login`
+- `POST /auth/refresh`
+- `POST /users`
+- `POST /transactions` (protected)
+- `GET /transactions` (protected)
+- `GET /balances` (protected)
+- `GET /metrics`
 
 ## Demo
-- Start the local stack (`docker-compose`) and run example fixtures from `test/fixtures` to exercise auth, transfer, and balance flows.
-- Review `test/e2e/` for sample flows that demonstrate typical usage.
+Use the E2E tests as executable API usage examples:
+
+```bash
+go test ./test/e2e -v
+```
 
 ## Design Decisions
-- Transport: `gorilla/mux` + `net/http` chosen for explicit control and minimal runtime abstraction.
-- Layering: transport handlers delegate to use cases to ensure business logic is testable and framework-agnostic.
-- Transactions & Idempotency: transfers are executed inside DB transactions with idempotency keys to avoid double-processing.
-- Workers: retryable and deferred tasks are handled by background workers to keep API latency bounded.
+- Keep transport explicit with `gorilla/mux` + `net/http`.
+- Keep business orchestration in use cases.
+- Keep domain contracts independent from infrastructure details.
+- Keep middleware responsibilities composable and isolated.
 
 ## Performance and Benchmarking
-- Focus areas: transfer throughput, DB transaction latency, worker concurrency.
-- Run targeted benchmarks:
-
-```bash
-go test ./internal/... -bench BenchmarkTransfer -benchmem
-```
-
-- For load testing, see `test/load/k6_load_test.js` and run against a staging environment.
+A load test script is available at `test/load/k6_load_test.js`. Benchmark-focused hardening is planned as part of the next reliability iteration.
 
 ## Roadmap
-- Complete DI wiring and production-ready `cmd` bootstrapping.
-- Harden CI/CD with security scanning and dependency pinning.
-- Add deployment manifests and automated k8s validation.
-- Implement SLOs and on-call playbooks for critical flows.
+- Finalize application bootstrap wiring in `cmd/main.go`.
+- Expand integration matrix in CI.
+- Strengthen deployment safety and rollback practices.
 
 ## Contributing
-- Open issues and PRs are welcome. Keep changes small and focused.
-- Run linters and tests locally before submitting PRs.
-- Refer to `CONTRIBUTING.md` (if present) for branch and commit guidance.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contributor workflow and expectations.
 
 ## Release and Versioning
-- Semantic Versioning (MAJOR.MINOR.PATCH).
-- Tag releases and include changelogs describing migration steps and breaking changes.
+Semantic versioning (`MAJOR.MINOR.PATCH`) with release notes tracked in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
-See the `LICENSE` file at the repository root for license terms. Contact the repository owner if no license is present.
+No license file is currently included. Add a `LICENSE` file before external redistribution.
 
-```
-
-### Linting
-
-```bash
-golangci-lint run
-```
-
----
-
-## CI/CD
-
-GitHub Actions runs on every push to `main`:
-
-1. `go mod tidy` + `go build`
-2. `go test ./... -v`
-3. Docker image build
-4. Push to Docker registry
-5. Deploy to Kubernetes
-
-Workflow files: [.github/workflows/](.github/workflows/)
-
----
-
-## Monitoring
-
-Prometheus scrapes `/metrics`. Import `monitoring/grafana/dashboard.json` into Grafana for a pre-built dashboard.
-
-```bash
-# Start full monitoring stack
-docker-compose -f deployments/docker-compose.yml up prometheus grafana
-```
-
-- Prometheus: `http://localhost:9090`
-- Grafana: `http://localhost:3000`
-
----
-
-## Troubleshooting
-
-**Port 8081 already in use**
-```bash
-lsof -ti:8081 | xargs kill -9
-```
-
-**Database not ready**
-```bash
-docker logs <postgres-container>
-# Wait for "database system is ready to accept connections", then restart the app
-docker-compose restart
-```
-
-**Module import errors**
-```bash
-go mod tidy
-```
-
----
-
-## Contributing
-
-1. Fork the repo
-2. Create a branch: `git checkout -b feat/your-feature`
-3. Commit using conventional commits: `git commit -m "feat: add X"`
-4. Push and open a Pull Request
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE)
-
----
-
-## Author
-
-**Abdullah Öztoprak**
-- GitHub: [@AbdullahOztoprak](https://github.com/AbdullahOztoprak)
-- Project: [github.com/AbdullahOztoprak/Backend-Path](https://github.com/AbdullahOztoprak/Backend-Path)
+For architecture details, see [docs/architecture.md](docs/architecture.md).
